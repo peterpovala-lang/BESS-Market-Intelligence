@@ -8,7 +8,6 @@
 <style>
   body { margin: 0; padding: 0; background: #FAFBFC; }
   #root { max-width: 1100px; margin: 0 auto; }
-  /* Prevent FOUC */
   #loading { display: flex; align-items: center; justify-content: center; height: 100vh; font-family: Arial, sans-serif; color: #8B99A8; }
 </style>
 <!-- React 18 -->
@@ -18,542 +17,2393 @@
 <script crossorigin src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
 <!-- Recharts -->
 <script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
-<!-- Babel for JSX -->
-<script crossorigin src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.9/babel.min.js"></script>
 </head>
 <body>
 <div id="root"><div id="loading">Loading BESS Market Intelligence...</div></div>
-<script type="text/babel">
-const { useState, useMemo } = React;
-const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, ResponsiveContainer, ReferenceLine, ScatterChart, Scatter, Cell } = Recharts;
-
-
-
+<script>
+const {
+  useState,
+  useMemo
+} = React;
+const {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+  ReferenceLine,
+  ScatterChart,
+  Scatter,
+  Cell
+} = Recharts;
 
 // ═══════════════════════════════════════════════════════
 // DATA: Clean Horizon Storage Index (Jan 2023 – Jan 2026)
 // ═══════════════════════════════════════════════════════
-const SI_DATA = [{"date":"2023-01","Belgium":644,"Denmark DK1":153,"Denmark DK2":935,"Estonia":99,"Finland":515,"France":136,"Germany":186,"Italy":124,"Latvia":107,"Lithuania":108,"Poland":31,"Portugal":485,"Romania":253,"Spain":445,"Sweden":623},{"date":"2023-02","Belgium":288,"Denmark DK1":135,"Denmark DK2":323,"Estonia":113,"Finland":332,"France":145,"Germany":153,"Italy":67,"Latvia":114,"Lithuania":114,"Poland":24,"Portugal":231,"Romania":132,"Spain":250,"Sweden":301},{"date":"2023-03","Belgium":451,"Denmark DK1":140,"Denmark DK2":393,"Estonia":117,"Finland":381,"France":230,"Germany":159,"Italy":85,"Latvia":121,"Lithuania":120,"Poland":33,"Portugal":430,"Romania":89,"Spain":463,"Sweden":383},{"date":"2023-04","Belgium":367,"Denmark DK1":126,"Denmark DK2":928,"Estonia":95,"Finland":354,"France":186,"Germany":145,"Italy":50,"Latvia":108,"Lithuania":103,"Poland":25,"Portugal":441,"Romania":110,"Spain":402,"Sweden":840},{"date":"2023-05","Belgium":440,"Denmark DK1":139,"Denmark DK2":1302,"Estonia":113,"Finland":688,"France":141,"Germany":168,"Italy":79,"Latvia":120,"Lithuania":118,"Poland":41,"Portugal":385,"Romania":104,"Spain":412,"Sweden":1268},{"date":"2023-06","Belgium":252,"Denmark DK1":136,"Denmark DK2":1265,"Estonia":156,"Finland":461,"France":164,"Germany":364,"Italy":66,"Latvia":151,"Lithuania":154,"Poland":42,"Portugal":248,"Romania":97,"Spain":294,"Sweden":1264},{"date":"2023-07","Belgium":429,"Denmark DK1":193,"Denmark DK2":1802,"Estonia":166,"Finland":583,"France":168,"Germany":529,"Italy":84,"Latvia":184,"Lithuania":191,"Poland":54,"Portugal":279,"Romania":134,"Spain":357,"Sweden":1690},{"date":"2023-08","Belgium":398,"Denmark DK1":155,"Denmark DK2":1284,"Estonia":257,"Finland":723,"France":152,"Germany":262,"Italy":112,"Latvia":248,"Lithuania":247,"Poland":47,"Portugal":336,"Romania":146,"Spain":312,"Sweden":1245},{"date":"2023-09","Belgium":370,"Denmark DK1":186,"Denmark DK2":804,"Estonia":208,"Finland":810,"France":184,"Germany":219,"Italy":92,"Latvia":194,"Lithuania":193,"Poland":67,"Portugal":262,"Romania":143,"Spain":266,"Sweden":667},{"date":"2023-10","Belgium":595,"Denmark DK1":224,"Denmark DK2":378,"Estonia":153,"Finland":516,"France":253,"Germany":254,"Italy":100,"Latvia":150,"Lithuania":154,"Poland":62,"Portugal":434,"Romania":161,"Spain":402,"Sweden":369},{"date":"2023-11","Belgium":425,"Denmark DK1":162,"Denmark DK2":296,"Estonia":154,"Finland":581,"France":170,"Germany":174,"Italy":77,"Latvia":136,"Lithuania":144,"Poland":40,"Portugal":298,"Romania":164,"Spain":318,"Sweden":284},{"date":"2023-12","Belgium":425,"Denmark DK1":179,"Denmark DK2":549,"Estonia":74,"Finland":506,"France":184,"Germany":142,"Italy":57,"Latvia":72,"Lithuania":66,"Poland":32,"Portugal":289,"Romania":140,"Spain":302,"Sweden":554},{"date":"2024-01","Belgium":319,"Denmark DK1":97,"Denmark DK2":405,"Estonia":144,"Finland":590,"France":89,"Germany":104,"Italy":14,"Latvia":117,"Lithuania":116,"Poland":24,"Portugal":336,"Romania":80,"Spain":322,"Sweden":372},{"date":"2024-02","Belgium":300,"Denmark DK1":79,"Denmark DK2":448,"Estonia":118,"Finland":390,"France":115,"Germany":81,"Italy":5,"Latvia":118,"Lithuania":119,"Poland":23,"Portugal":307,"Romania":60,"Spain":266,"Sweden":455},{"date":"2024-03","Belgium":454,"Denmark DK1":95,"Denmark DK2":462,"Estonia":124,"Finland":390,"France":219,"Germany":124,"Italy":31,"Latvia":127,"Lithuania":127,"Poland":34,"Portugal":268,"Romania":80,"Spain":256,"Sweden":446},{"date":"2024-04","Belgium":620,"Denmark DK1":159,"Denmark DK2":1242,"Estonia":128,"Finland":576,"France":137,"Germany":199,"Italy":37,"Latvia":127,"Lithuania":127,"Poland":49,"Portugal":224,"Romania":104,"Spain":236,"Sweden":1247},{"date":"2024-05","Belgium":902,"Denmark DK1":185,"Denmark DK2":734,"Estonia":204,"Finland":746,"France":134,"Germany":229,"Italy":60,"Latvia":205,"Lithuania":205,"Poland":51,"Portugal":363,"Romania":118,"Spain":269,"Sweden":505},{"date":"2024-06","Belgium":656,"Denmark DK1":219,"Denmark DK2":531,"Estonia":213,"Finland":563,"France":155,"Germany":279,"Italy":68,"Latvia":202,"Lithuania":202,"Poland":482,"Portugal":289,"Romania":156,"Spain":376,"Sweden":450},{"date":"2024-07","Belgium":678,"Denmark DK1":216,"Denmark DK2":444,"Estonia":188,"Finland":314,"France":389,"Germany":251,"Italy":95,"Latvia":181,"Lithuania":181,"Poland":689,"Portugal":271,"Romania":326,"Spain":260,"Sweden":384},{"date":"2024-08","Belgium":844,"Denmark DK1":221,"Denmark DK2":318,"Estonia":252,"Finland":431,"France":421,"Germany":266,"Italy":133,"Latvia":252,"Lithuania":253,"Poland":511,"Portugal":373,"Romania":287,"Spain":273,"Sweden":237},{"date":"2024-09","Belgium":670,"Denmark DK1":202,"Denmark DK2":322,"Estonia":214,"Finland":561,"France":480,"Germany":241,"Italy":75,"Latvia":203,"Lithuania":204,"Poland":504,"Portugal":243,"Romania":443,"Spain":289,"Sweden":151},{"date":"2024-10","Belgium":691,"Denmark DK1":663,"Denmark DK2":856,"Estonia":234,"Finland":498,"France":382,"Germany":235,"Italy":98,"Latvia":270,"Lithuania":208,"Poland":521,"Portugal":341,"Romania":452,"Spain":372,"Sweden":168},{"date":"2024-11","Belgium":389,"Denmark DK1":462,"Denmark DK2":668,"Estonia":261,"Finland":364,"France":340,"Germany":194,"Italy":109,"Latvia":267,"Lithuania":267,"Poland":499,"Portugal":270,"Romania":427,"Spain":334,"Sweden":248},{"date":"2024-12","Belgium":419,"Denmark DK1":343,"Denmark DK2":466,"Estonia":267,"Finland":404,"France":305,"Germany":201,"Italy":101,"Latvia":266,"Lithuania":261,"Poland":446,"Portugal":395,"Romania":325,"Spain":381,"Sweden":249},{"date":"2025-01","Belgium":266,"Denmark DK1":319,"Denmark DK2":348,"Estonia":165,"Finland":558,"France":220,"Germany":111,"Italy":66,"Latvia":165,"Lithuania":166,"Poland":257,"Portugal":421,"Romania":335,"Spain":423,"Sweden":119},{"date":"2025-02","Belgium":159,"Denmark DK1":307,"Denmark DK2":397,"Estonia":769,"Finland":237,"France":214,"Germany":130,"Italy":54,"Latvia":755,"Lithuania":752,"Poland":200,"Portugal":576,"Romania":326,"Spain":421,"Sweden":246},{"date":"2025-03","Belgium":211,"Denmark DK1":227,"Denmark DK2":549,"Estonia":1646,"Finland":390,"France":280,"Germany":215,"Italy":58,"Latvia":1455,"Lithuania":1429,"Poland":375,"Portugal":403,"Romania":408,"Spain":328,"Sweden":609},{"date":"2025-04","Belgium":204,"Denmark DK1":304,"Denmark DK2":463,"Estonia":5325,"Finland":395,"France":443,"Germany":206,"Italy":72,"Latvia":2558,"Lithuania":2185,"Poland":466,"Portugal":292,"Romania":383,"Spain":218,"Sweden":507},{"date":"2025-05","Belgium":317,"Denmark DK1":430,"Denmark DK2":508,"Estonia":3484,"Finland":409,"France":314,"Germany":301,"Italy":67,"Latvia":3288,"Lithuania":3617,"Poland":408,"Portugal":208,"Romania":358,"Spain":167,"Sweden":432},{"date":"2025-06","Belgium":285,"Denmark DK1":448,"Denmark DK2":624,"Estonia":741,"Finland":409,"France":355,"Germany":276,"Italy":98,"Latvia":691,"Lithuania":1070,"Poland":587,"Portugal":218,"Romania":420,"Spain":190,"Sweden":483},{"date":"2025-07","Belgium":432,"Denmark DK1":397,"Denmark DK2":228,"Estonia":2975,"Finland":267,"France":518,"Germany":223,"Italy":73,"Latvia":2652,"Lithuania":2645,"Poland":403,"Portugal":276,"Romania":564,"Spain":254,"Sweden":369},{"date":"2025-08","Belgium":224,"Denmark DK1":429,"Denmark DK2":480,"Estonia":1160,"Finland":484,"France":422,"Germany":245,"Italy":66,"Latvia":1286,"Lithuania":1350,"Poland":452,"Portugal":357,"Romania":625,"Spain":283,"Sweden":373},{"date":"2025-09","Belgium":208,"Denmark DK1":372,"Denmark DK2":704,"Estonia":993,"Finland":353,"France":337,"Germany":360,"Italy":99,"Latvia":1363,"Lithuania":1489,"Poland":426,"Portugal":310,"Romania":536,"Spain":301,"Sweden":376},{"date":"2025-10","Belgium":164,"Denmark DK1":381,"Denmark DK2":434,"Estonia":761,"Finland":227,"France":311,"Germany":347,"Italy":174,"Latvia":955,"Lithuania":1077,"Poland":471,"Portugal":367,"Romania":492,"Spain":283,"Sweden":445},{"date":"2025-11","Belgium":100,"Denmark DK1":268,"Denmark DK2":279,"Estonia":423,"Finland":124,"France":198,"Germany":209,"Italy":141,"Latvia":459,"Lithuania":486,"Poland":360,"Portugal":292,"Romania":426,"Spain":239,"Sweden":294},{"date":"2025-12","Belgium":84,"Denmark DK1":269,"Denmark DK2":253,"Estonia":268,"Finland":96,"France":184,"Germany":203,"Italy":90,"Latvia":274,"Lithuania":329,"Poland":341,"Portugal":228,"Romania":424,"Spain":174,"Sweden":157},{"date":"2026-01","Belgium":103,"Denmark DK1":272,"Denmark DK2":203,"Estonia":503,"Finland":130,"France":210,"Germany":129,"Italy":173,"Latvia":533,"Lithuania":519,"Poland":605,"Portugal":257,"Romania":258,"Spain":322,"Sweden":108}];
-
+const SI_DATA = [{
+  "date": "2023-01",
+  "Belgium": 644,
+  "Denmark DK1": 153,
+  "Denmark DK2": 935,
+  "Estonia": 99,
+  "Finland": 515,
+  "France": 136,
+  "Germany": 186,
+  "Italy": 124,
+  "Latvia": 107,
+  "Lithuania": 108,
+  "Poland": 31,
+  "Portugal": 485,
+  "Romania": 253,
+  "Spain": 445,
+  "Sweden": 623
+}, {
+  "date": "2023-02",
+  "Belgium": 288,
+  "Denmark DK1": 135,
+  "Denmark DK2": 323,
+  "Estonia": 113,
+  "Finland": 332,
+  "France": 145,
+  "Germany": 153,
+  "Italy": 67,
+  "Latvia": 114,
+  "Lithuania": 114,
+  "Poland": 24,
+  "Portugal": 231,
+  "Romania": 132,
+  "Spain": 250,
+  "Sweden": 301
+}, {
+  "date": "2023-03",
+  "Belgium": 451,
+  "Denmark DK1": 140,
+  "Denmark DK2": 393,
+  "Estonia": 117,
+  "Finland": 381,
+  "France": 230,
+  "Germany": 159,
+  "Italy": 85,
+  "Latvia": 121,
+  "Lithuania": 120,
+  "Poland": 33,
+  "Portugal": 430,
+  "Romania": 89,
+  "Spain": 463,
+  "Sweden": 383
+}, {
+  "date": "2023-04",
+  "Belgium": 367,
+  "Denmark DK1": 126,
+  "Denmark DK2": 928,
+  "Estonia": 95,
+  "Finland": 354,
+  "France": 186,
+  "Germany": 145,
+  "Italy": 50,
+  "Latvia": 108,
+  "Lithuania": 103,
+  "Poland": 25,
+  "Portugal": 441,
+  "Romania": 110,
+  "Spain": 402,
+  "Sweden": 840
+}, {
+  "date": "2023-05",
+  "Belgium": 440,
+  "Denmark DK1": 139,
+  "Denmark DK2": 1302,
+  "Estonia": 113,
+  "Finland": 688,
+  "France": 141,
+  "Germany": 168,
+  "Italy": 79,
+  "Latvia": 120,
+  "Lithuania": 118,
+  "Poland": 41,
+  "Portugal": 385,
+  "Romania": 104,
+  "Spain": 412,
+  "Sweden": 1268
+}, {
+  "date": "2023-06",
+  "Belgium": 252,
+  "Denmark DK1": 136,
+  "Denmark DK2": 1265,
+  "Estonia": 156,
+  "Finland": 461,
+  "France": 164,
+  "Germany": 364,
+  "Italy": 66,
+  "Latvia": 151,
+  "Lithuania": 154,
+  "Poland": 42,
+  "Portugal": 248,
+  "Romania": 97,
+  "Spain": 294,
+  "Sweden": 1264
+}, {
+  "date": "2023-07",
+  "Belgium": 429,
+  "Denmark DK1": 193,
+  "Denmark DK2": 1802,
+  "Estonia": 166,
+  "Finland": 583,
+  "France": 168,
+  "Germany": 529,
+  "Italy": 84,
+  "Latvia": 184,
+  "Lithuania": 191,
+  "Poland": 54,
+  "Portugal": 279,
+  "Romania": 134,
+  "Spain": 357,
+  "Sweden": 1690
+}, {
+  "date": "2023-08",
+  "Belgium": 398,
+  "Denmark DK1": 155,
+  "Denmark DK2": 1284,
+  "Estonia": 257,
+  "Finland": 723,
+  "France": 152,
+  "Germany": 262,
+  "Italy": 112,
+  "Latvia": 248,
+  "Lithuania": 247,
+  "Poland": 47,
+  "Portugal": 336,
+  "Romania": 146,
+  "Spain": 312,
+  "Sweden": 1245
+}, {
+  "date": "2023-09",
+  "Belgium": 370,
+  "Denmark DK1": 186,
+  "Denmark DK2": 804,
+  "Estonia": 208,
+  "Finland": 810,
+  "France": 184,
+  "Germany": 219,
+  "Italy": 92,
+  "Latvia": 194,
+  "Lithuania": 193,
+  "Poland": 67,
+  "Portugal": 262,
+  "Romania": 143,
+  "Spain": 266,
+  "Sweden": 667
+}, {
+  "date": "2023-10",
+  "Belgium": 595,
+  "Denmark DK1": 224,
+  "Denmark DK2": 378,
+  "Estonia": 153,
+  "Finland": 516,
+  "France": 253,
+  "Germany": 254,
+  "Italy": 100,
+  "Latvia": 150,
+  "Lithuania": 154,
+  "Poland": 62,
+  "Portugal": 434,
+  "Romania": 161,
+  "Spain": 402,
+  "Sweden": 369
+}, {
+  "date": "2023-11",
+  "Belgium": 425,
+  "Denmark DK1": 162,
+  "Denmark DK2": 296,
+  "Estonia": 154,
+  "Finland": 581,
+  "France": 170,
+  "Germany": 174,
+  "Italy": 77,
+  "Latvia": 136,
+  "Lithuania": 144,
+  "Poland": 40,
+  "Portugal": 298,
+  "Romania": 164,
+  "Spain": 318,
+  "Sweden": 284
+}, {
+  "date": "2023-12",
+  "Belgium": 425,
+  "Denmark DK1": 179,
+  "Denmark DK2": 549,
+  "Estonia": 74,
+  "Finland": 506,
+  "France": 184,
+  "Germany": 142,
+  "Italy": 57,
+  "Latvia": 72,
+  "Lithuania": 66,
+  "Poland": 32,
+  "Portugal": 289,
+  "Romania": 140,
+  "Spain": 302,
+  "Sweden": 554
+}, {
+  "date": "2024-01",
+  "Belgium": 319,
+  "Denmark DK1": 97,
+  "Denmark DK2": 405,
+  "Estonia": 144,
+  "Finland": 590,
+  "France": 89,
+  "Germany": 104,
+  "Italy": 14,
+  "Latvia": 117,
+  "Lithuania": 116,
+  "Poland": 24,
+  "Portugal": 336,
+  "Romania": 80,
+  "Spain": 322,
+  "Sweden": 372
+}, {
+  "date": "2024-02",
+  "Belgium": 300,
+  "Denmark DK1": 79,
+  "Denmark DK2": 448,
+  "Estonia": 118,
+  "Finland": 390,
+  "France": 115,
+  "Germany": 81,
+  "Italy": 5,
+  "Latvia": 118,
+  "Lithuania": 119,
+  "Poland": 23,
+  "Portugal": 307,
+  "Romania": 60,
+  "Spain": 266,
+  "Sweden": 455
+}, {
+  "date": "2024-03",
+  "Belgium": 454,
+  "Denmark DK1": 95,
+  "Denmark DK2": 462,
+  "Estonia": 124,
+  "Finland": 390,
+  "France": 219,
+  "Germany": 124,
+  "Italy": 31,
+  "Latvia": 127,
+  "Lithuania": 127,
+  "Poland": 34,
+  "Portugal": 268,
+  "Romania": 80,
+  "Spain": 256,
+  "Sweden": 446
+}, {
+  "date": "2024-04",
+  "Belgium": 620,
+  "Denmark DK1": 159,
+  "Denmark DK2": 1242,
+  "Estonia": 128,
+  "Finland": 576,
+  "France": 137,
+  "Germany": 199,
+  "Italy": 37,
+  "Latvia": 127,
+  "Lithuania": 127,
+  "Poland": 49,
+  "Portugal": 224,
+  "Romania": 104,
+  "Spain": 236,
+  "Sweden": 1247
+}, {
+  "date": "2024-05",
+  "Belgium": 902,
+  "Denmark DK1": 185,
+  "Denmark DK2": 734,
+  "Estonia": 204,
+  "Finland": 746,
+  "France": 134,
+  "Germany": 229,
+  "Italy": 60,
+  "Latvia": 205,
+  "Lithuania": 205,
+  "Poland": 51,
+  "Portugal": 363,
+  "Romania": 118,
+  "Spain": 269,
+  "Sweden": 505
+}, {
+  "date": "2024-06",
+  "Belgium": 656,
+  "Denmark DK1": 219,
+  "Denmark DK2": 531,
+  "Estonia": 213,
+  "Finland": 563,
+  "France": 155,
+  "Germany": 279,
+  "Italy": 68,
+  "Latvia": 202,
+  "Lithuania": 202,
+  "Poland": 482,
+  "Portugal": 289,
+  "Romania": 156,
+  "Spain": 376,
+  "Sweden": 450
+}, {
+  "date": "2024-07",
+  "Belgium": 678,
+  "Denmark DK1": 216,
+  "Denmark DK2": 444,
+  "Estonia": 188,
+  "Finland": 314,
+  "France": 389,
+  "Germany": 251,
+  "Italy": 95,
+  "Latvia": 181,
+  "Lithuania": 181,
+  "Poland": 689,
+  "Portugal": 271,
+  "Romania": 326,
+  "Spain": 260,
+  "Sweden": 384
+}, {
+  "date": "2024-08",
+  "Belgium": 844,
+  "Denmark DK1": 221,
+  "Denmark DK2": 318,
+  "Estonia": 252,
+  "Finland": 431,
+  "France": 421,
+  "Germany": 266,
+  "Italy": 133,
+  "Latvia": 252,
+  "Lithuania": 253,
+  "Poland": 511,
+  "Portugal": 373,
+  "Romania": 287,
+  "Spain": 273,
+  "Sweden": 237
+}, {
+  "date": "2024-09",
+  "Belgium": 670,
+  "Denmark DK1": 202,
+  "Denmark DK2": 322,
+  "Estonia": 214,
+  "Finland": 561,
+  "France": 480,
+  "Germany": 241,
+  "Italy": 75,
+  "Latvia": 203,
+  "Lithuania": 204,
+  "Poland": 504,
+  "Portugal": 243,
+  "Romania": 443,
+  "Spain": 289,
+  "Sweden": 151
+}, {
+  "date": "2024-10",
+  "Belgium": 691,
+  "Denmark DK1": 663,
+  "Denmark DK2": 856,
+  "Estonia": 234,
+  "Finland": 498,
+  "France": 382,
+  "Germany": 235,
+  "Italy": 98,
+  "Latvia": 270,
+  "Lithuania": 208,
+  "Poland": 521,
+  "Portugal": 341,
+  "Romania": 452,
+  "Spain": 372,
+  "Sweden": 168
+}, {
+  "date": "2024-11",
+  "Belgium": 389,
+  "Denmark DK1": 462,
+  "Denmark DK2": 668,
+  "Estonia": 261,
+  "Finland": 364,
+  "France": 340,
+  "Germany": 194,
+  "Italy": 109,
+  "Latvia": 267,
+  "Lithuania": 267,
+  "Poland": 499,
+  "Portugal": 270,
+  "Romania": 427,
+  "Spain": 334,
+  "Sweden": 248
+}, {
+  "date": "2024-12",
+  "Belgium": 419,
+  "Denmark DK1": 343,
+  "Denmark DK2": 466,
+  "Estonia": 267,
+  "Finland": 404,
+  "France": 305,
+  "Germany": 201,
+  "Italy": 101,
+  "Latvia": 266,
+  "Lithuania": 261,
+  "Poland": 446,
+  "Portugal": 395,
+  "Romania": 325,
+  "Spain": 381,
+  "Sweden": 249
+}, {
+  "date": "2025-01",
+  "Belgium": 266,
+  "Denmark DK1": 319,
+  "Denmark DK2": 348,
+  "Estonia": 165,
+  "Finland": 558,
+  "France": 220,
+  "Germany": 111,
+  "Italy": 66,
+  "Latvia": 165,
+  "Lithuania": 166,
+  "Poland": 257,
+  "Portugal": 421,
+  "Romania": 335,
+  "Spain": 423,
+  "Sweden": 119
+}, {
+  "date": "2025-02",
+  "Belgium": 159,
+  "Denmark DK1": 307,
+  "Denmark DK2": 397,
+  "Estonia": 769,
+  "Finland": 237,
+  "France": 214,
+  "Germany": 130,
+  "Italy": 54,
+  "Latvia": 755,
+  "Lithuania": 752,
+  "Poland": 200,
+  "Portugal": 576,
+  "Romania": 326,
+  "Spain": 421,
+  "Sweden": 246
+}, {
+  "date": "2025-03",
+  "Belgium": 211,
+  "Denmark DK1": 227,
+  "Denmark DK2": 549,
+  "Estonia": 1646,
+  "Finland": 390,
+  "France": 280,
+  "Germany": 215,
+  "Italy": 58,
+  "Latvia": 1455,
+  "Lithuania": 1429,
+  "Poland": 375,
+  "Portugal": 403,
+  "Romania": 408,
+  "Spain": 328,
+  "Sweden": 609
+}, {
+  "date": "2025-04",
+  "Belgium": 204,
+  "Denmark DK1": 304,
+  "Denmark DK2": 463,
+  "Estonia": 5325,
+  "Finland": 395,
+  "France": 443,
+  "Germany": 206,
+  "Italy": 72,
+  "Latvia": 2558,
+  "Lithuania": 2185,
+  "Poland": 466,
+  "Portugal": 292,
+  "Romania": 383,
+  "Spain": 218,
+  "Sweden": 507
+}, {
+  "date": "2025-05",
+  "Belgium": 317,
+  "Denmark DK1": 430,
+  "Denmark DK2": 508,
+  "Estonia": 3484,
+  "Finland": 409,
+  "France": 314,
+  "Germany": 301,
+  "Italy": 67,
+  "Latvia": 3288,
+  "Lithuania": 3617,
+  "Poland": 408,
+  "Portugal": 208,
+  "Romania": 358,
+  "Spain": 167,
+  "Sweden": 432
+}, {
+  "date": "2025-06",
+  "Belgium": 285,
+  "Denmark DK1": 448,
+  "Denmark DK2": 624,
+  "Estonia": 741,
+  "Finland": 409,
+  "France": 355,
+  "Germany": 276,
+  "Italy": 98,
+  "Latvia": 691,
+  "Lithuania": 1070,
+  "Poland": 587,
+  "Portugal": 218,
+  "Romania": 420,
+  "Spain": 190,
+  "Sweden": 483
+}, {
+  "date": "2025-07",
+  "Belgium": 432,
+  "Denmark DK1": 397,
+  "Denmark DK2": 228,
+  "Estonia": 2975,
+  "Finland": 267,
+  "France": 518,
+  "Germany": 223,
+  "Italy": 73,
+  "Latvia": 2652,
+  "Lithuania": 2645,
+  "Poland": 403,
+  "Portugal": 276,
+  "Romania": 564,
+  "Spain": 254,
+  "Sweden": 369
+}, {
+  "date": "2025-08",
+  "Belgium": 224,
+  "Denmark DK1": 429,
+  "Denmark DK2": 480,
+  "Estonia": 1160,
+  "Finland": 484,
+  "France": 422,
+  "Germany": 245,
+  "Italy": 66,
+  "Latvia": 1286,
+  "Lithuania": 1350,
+  "Poland": 452,
+  "Portugal": 357,
+  "Romania": 625,
+  "Spain": 283,
+  "Sweden": 373
+}, {
+  "date": "2025-09",
+  "Belgium": 208,
+  "Denmark DK1": 372,
+  "Denmark DK2": 704,
+  "Estonia": 993,
+  "Finland": 353,
+  "France": 337,
+  "Germany": 360,
+  "Italy": 99,
+  "Latvia": 1363,
+  "Lithuania": 1489,
+  "Poland": 426,
+  "Portugal": 310,
+  "Romania": 536,
+  "Spain": 301,
+  "Sweden": 376
+}, {
+  "date": "2025-10",
+  "Belgium": 164,
+  "Denmark DK1": 381,
+  "Denmark DK2": 434,
+  "Estonia": 761,
+  "Finland": 227,
+  "France": 311,
+  "Germany": 347,
+  "Italy": 174,
+  "Latvia": 955,
+  "Lithuania": 1077,
+  "Poland": 471,
+  "Portugal": 367,
+  "Romania": 492,
+  "Spain": 283,
+  "Sweden": 445
+}, {
+  "date": "2025-11",
+  "Belgium": 100,
+  "Denmark DK1": 268,
+  "Denmark DK2": 279,
+  "Estonia": 423,
+  "Finland": 124,
+  "France": 198,
+  "Germany": 209,
+  "Italy": 141,
+  "Latvia": 459,
+  "Lithuania": 486,
+  "Poland": 360,
+  "Portugal": 292,
+  "Romania": 426,
+  "Spain": 239,
+  "Sweden": 294
+}, {
+  "date": "2025-12",
+  "Belgium": 84,
+  "Denmark DK1": 269,
+  "Denmark DK2": 253,
+  "Estonia": 268,
+  "Finland": 96,
+  "France": 184,
+  "Germany": 203,
+  "Italy": 90,
+  "Latvia": 274,
+  "Lithuania": 329,
+  "Poland": 341,
+  "Portugal": 228,
+  "Romania": 424,
+  "Spain": 174,
+  "Sweden": 157
+}, {
+  "date": "2026-01",
+  "Belgium": 103,
+  "Denmark DK1": 272,
+  "Denmark DK2": 203,
+  "Estonia": 503,
+  "Finland": 130,
+  "France": 210,
+  "Germany": 129,
+  "Italy": 173,
+  "Latvia": 533,
+  "Lithuania": 519,
+  "Poland": 605,
+  "Portugal": 257,
+  "Romania": 258,
+  "Spain": 322,
+  "Sweden": 108
+}];
 const SI_COUNTRIES = Object.keys(SI_DATA[0]).filter(k => k !== 'date');
 const CLUSTERS = {
-  'Baltics': { countries: ['Estonia', 'Latvia', 'Lithuania'], color: '#00897B' },
-  'Nordic wind': { countries: ['Denmark DK2', 'Sweden'], color: '#1565C0' },
-  'West EU': { countries: ['Belgium', 'Finland', 'Portugal', 'Spain'], color: '#E68A00' },
-  'CEE + core': { countries: ['Denmark DK1', 'France', 'Germany', 'Italy', 'Poland', 'Romania'], color: '#8B99A8' },
+  'Baltics': {
+    countries: ['Estonia', 'Latvia', 'Lithuania'],
+    color: '#00897B'
+  },
+  'Nordic wind': {
+    countries: ['Denmark DK2', 'Sweden'],
+    color: '#1565C0'
+  },
+  'West EU': {
+    countries: ['Belgium', 'Finland', 'Portugal', 'Spain'],
+    color: '#E68A00'
+  },
+  'CEE + core': {
+    countries: ['Denmark DK1', 'France', 'Germany', 'Italy', 'Poland', 'Romania'],
+    color: '#8B99A8'
+  }
 };
-const SI_COLORS = { Belgium:'#7B1FA2', 'Denmark DK1':'#1565C0', 'Denmark DK2':'#0D47A1', Estonia:'#00897B', Finland:'#558B2F', France:'#C62828', Germany:'#F57F17', Italy:'#4E342E', Latvia:'#00695C', Lithuania:'#004D40', Poland:'#AD1457', Portugal:'#EF6C00', Romania:'#283593', Spain:'#BF360C', Sweden:'#0277BD' };
+const SI_COLORS = {
+  Belgium: '#7B1FA2',
+  'Denmark DK1': '#1565C0',
+  'Denmark DK2': '#0D47A1',
+  Estonia: '#00897B',
+  Finland: '#558B2F',
+  France: '#C62828',
+  Germany: '#F57F17',
+  Italy: '#4E342E',
+  Latvia: '#00695C',
+  Lithuania: '#004D40',
+  Poland: '#AD1457',
+  Portugal: '#EF6C00',
+  Romania: '#283593',
+  Spain: '#BF360C',
+  Sweden: '#0277BD'
+};
 
 // ═══════════════════════════════════════════════════════
 // DATA: RES vs BESS (IRENA 2025 + industry sources)
 // ═══════════════════════════════════════════════════════
-const RES_DATA = [
-  { country:"Germany",res:163,bess:3.5,pipeline:18,storageIdx:237,region:"West EU",interconn:"high",syncEvent:false },
-  { country:"Spain",res:68,bess:0.4,pipeline:11,storageIdx:265,region:"Iberia",interconn:"low",syncEvent:false },
-  { country:"Italy",res:57,bess:2.5,pipeline:10,storageIdx:97,region:"South EU",interconn:"med",syncEvent:false },
-  { country:"France",res:46,bess:0.4,pipeline:3,storageIdx:316,region:"West EU",interconn:"high",syncEvent:false },
-  { country:"UK",res:48,bess:5.9,pipeline:18,storageIdx:280,region:"West EU",interconn:"med",syncEvent:false },
-  { country:"Netherlands",res:30,bess:0.6,pipeline:2,storageIdx:200,region:"West EU",interconn:"high",syncEvent:false },
-  { country:"Sweden",res:30,bess:0.1,pipeline:1.5,storageIdx:367,region:"Nordics",interconn:"high",syncEvent:false },
-  { country:"Poland",res:28,bess:0.15,pipeline:10,storageIdx:424,region:"CEE",interconn:"low",syncEvent:false },
-  { country:"Denmark",res:19,bess:0.1,pipeline:1,storageIdx:385,region:"Nordics",interconn:"med",syncEvent:false },
-  { country:"Finland",res:14,bess:0.15,pipeline:1,storageIdx:293,region:"Nordics",interconn:"med",syncEvent:false },
-  { country:"Romania",res:10,bess:0.05,pipeline:5,storageIdx:435,region:"CEE",interconn:"low",syncEvent:false },
-  { country:"Belgium",res:14,bess:0.4,pipeline:3,storageIdx:208,region:"West EU",interconn:"high",syncEvent:false },
-  { country:"Portugal",res:13,bess:0.1,pipeline:2,storageIdx:315,region:"Iberia",interconn:"low",syncEvent:false },
-  { country:"Greece",res:14,bess:0.1,pipeline:4,storageIdx:300,region:"South EU",interconn:"low",syncEvent:false },
-  { country:"Estonia",res:1.2,bess:0.23,pipeline:0.5,storageIdx:1587,region:"Baltics",interconn:"low",syncEvent:true },
-  { country:"Latvia",res:0.7,bess:0.01,pipeline:0.3,storageIdx:1356,region:"Baltics",interconn:"low",syncEvent:true },
-  { country:"Lithuania",res:3.5,bess:0.2,pipeline:3.5,storageIdx:1412,region:"Baltics",interconn:"low",syncEvent:true },
-  { country:"Czech Rep.",res:5,bess:0.05,pipeline:1,storageIdx:220,region:"CEE",interconn:"med",syncEvent:false },
-  { country:"Slovakia",res:1.5,bess:0.01,pipeline:0.3,storageIdx:200,region:"CEE",interconn:"med",syncEvent:false },
-  { country:"Bulgaria",res:4,bess:0.05,pipeline:4,storageIdx:350,region:"CEE",interconn:"low",syncEvent:false },
-];
-const REG_COLORS = { Baltics:"#00897B", CEE:"#E68A00", "West EU":"#1565C0", Nordics:"#558B2F", Iberia:"#BF360C", "South EU":"#7B1FA2" };
+const RES_DATA = [{
+  country: "Germany",
+  res: 163,
+  bess: 3.5,
+  pipeline: 18,
+  storageIdx: 237,
+  region: "West EU",
+  interconn: "high",
+  syncEvent: false
+}, {
+  country: "Spain",
+  res: 68,
+  bess: 0.4,
+  pipeline: 11,
+  storageIdx: 265,
+  region: "Iberia",
+  interconn: "low",
+  syncEvent: false
+}, {
+  country: "Italy",
+  res: 57,
+  bess: 2.5,
+  pipeline: 10,
+  storageIdx: 97,
+  region: "South EU",
+  interconn: "med",
+  syncEvent: false
+}, {
+  country: "France",
+  res: 46,
+  bess: 0.4,
+  pipeline: 3,
+  storageIdx: 316,
+  region: "West EU",
+  interconn: "high",
+  syncEvent: false
+}, {
+  country: "UK",
+  res: 48,
+  bess: 5.9,
+  pipeline: 18,
+  storageIdx: 280,
+  region: "West EU",
+  interconn: "med",
+  syncEvent: false
+}, {
+  country: "Netherlands",
+  res: 30,
+  bess: 0.6,
+  pipeline: 2,
+  storageIdx: 200,
+  region: "West EU",
+  interconn: "high",
+  syncEvent: false
+}, {
+  country: "Sweden",
+  res: 30,
+  bess: 0.1,
+  pipeline: 1.5,
+  storageIdx: 367,
+  region: "Nordics",
+  interconn: "high",
+  syncEvent: false
+}, {
+  country: "Poland",
+  res: 28,
+  bess: 0.15,
+  pipeline: 10,
+  storageIdx: 424,
+  region: "CEE",
+  interconn: "low",
+  syncEvent: false
+}, {
+  country: "Denmark",
+  res: 19,
+  bess: 0.1,
+  pipeline: 1,
+  storageIdx: 385,
+  region: "Nordics",
+  interconn: "med",
+  syncEvent: false
+}, {
+  country: "Finland",
+  res: 14,
+  bess: 0.15,
+  pipeline: 1,
+  storageIdx: 293,
+  region: "Nordics",
+  interconn: "med",
+  syncEvent: false
+}, {
+  country: "Romania",
+  res: 10,
+  bess: 0.05,
+  pipeline: 5,
+  storageIdx: 435,
+  region: "CEE",
+  interconn: "low",
+  syncEvent: false
+}, {
+  country: "Belgium",
+  res: 14,
+  bess: 0.4,
+  pipeline: 3,
+  storageIdx: 208,
+  region: "West EU",
+  interconn: "high",
+  syncEvent: false
+}, {
+  country: "Portugal",
+  res: 13,
+  bess: 0.1,
+  pipeline: 2,
+  storageIdx: 315,
+  region: "Iberia",
+  interconn: "low",
+  syncEvent: false
+}, {
+  country: "Greece",
+  res: 14,
+  bess: 0.1,
+  pipeline: 4,
+  storageIdx: 300,
+  region: "South EU",
+  interconn: "low",
+  syncEvent: false
+}, {
+  country: "Estonia",
+  res: 1.2,
+  bess: 0.23,
+  pipeline: 0.5,
+  storageIdx: 1587,
+  region: "Baltics",
+  interconn: "low",
+  syncEvent: true
+}, {
+  country: "Latvia",
+  res: 0.7,
+  bess: 0.01,
+  pipeline: 0.3,
+  storageIdx: 1356,
+  region: "Baltics",
+  interconn: "low",
+  syncEvent: true
+}, {
+  country: "Lithuania",
+  res: 3.5,
+  bess: 0.2,
+  pipeline: 3.5,
+  storageIdx: 1412,
+  region: "Baltics",
+  interconn: "low",
+  syncEvent: true
+}, {
+  country: "Czech Rep.",
+  res: 5,
+  bess: 0.05,
+  pipeline: 1,
+  storageIdx: 220,
+  region: "CEE",
+  interconn: "med",
+  syncEvent: false
+}, {
+  country: "Slovakia",
+  res: 1.5,
+  bess: 0.01,
+  pipeline: 0.3,
+  storageIdx: 200,
+  region: "CEE",
+  interconn: "med",
+  syncEvent: false
+}, {
+  country: "Bulgaria",
+  res: 4,
+  bess: 0.05,
+  pipeline: 4,
+  storageIdx: 350,
+  region: "CEE",
+  interconn: "low",
+  syncEvent: false
+}];
+const REG_COLORS = {
+  Baltics: "#00897B",
+  CEE: "#E68A00",
+  "West EU": "#1565C0",
+  Nordics: "#558B2F",
+  Iberia: "#BF360C",
+  "South EU": "#7B1FA2"
+};
 
 // ═══════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════
 function Dashboard() {
   const [tab, setTab] = useState('summary');
-  const [selCountries, setSelCountries] = useState(['Latvia','Estonia','Lithuania','Germany','Romania','Poland']);
+  const [selCountries, setSelCountries] = useState(['Latvia', 'Estonia', 'Lithuania', 'Germany', 'Romania', 'Poland']);
   const [showPipeline, setShowPipeline] = useState(false);
   const [resSort, setResSort] = useState('ratio');
-
-  const toggle = c => setSelCountries(p => p.includes(c) ? p.filter(x=>x!==c) : [...p,c]);
+  const toggle = c => setSelCountries(p => p.includes(c) ? p.filter(x => x !== c) : [...p, c]);
 
   // Storage index stats
   const siStats = useMemo(() => SI_COUNTRIES.map(c => {
-    const vals = SI_DATA.map(d=>d[c]);
-    const pre = SI_DATA.filter(d=>d.date<'2025-02').map(d=>d[c]);
-    const post = SI_DATA.filter(d=>d.date>='2025-02').map(d=>d[c]);
-    const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
-    const preMean = pre.reduce((a,b)=>a+b,0)/pre.length;
-    const postMean = post.reduce((a,b)=>a+b,0)/post.length;
-    return { country:c, mean:Math.round(mean), latest:vals[vals.length-1], preMean:Math.round(preMean), postMean:Math.round(postMean), syncChange:Math.round((postMean/preMean-1)*100) };
-  }).sort((a,b)=>b.mean-a.mean), []);
+    const vals = SI_DATA.map(d => d[c]);
+    const pre = SI_DATA.filter(d => d.date < '2025-02').map(d => d[c]);
+    const post = SI_DATA.filter(d => d.date >= '2025-02').map(d => d[c]);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const preMean = pre.reduce((a, b) => a + b, 0) / pre.length;
+    const postMean = post.reduce((a, b) => a + b, 0) / post.length;
+    return {
+      country: c,
+      mean: Math.round(mean),
+      latest: vals[vals.length - 1],
+      preMean: Math.round(preMean),
+      postMean: Math.round(postMean),
+      syncChange: Math.round((postMean / preMean - 1) * 100)
+    };
+  }).sort((a, b) => b.mean - a.mean), []);
 
   // Cluster averages
   const clusterAvg = useMemo(() => SI_DATA.map(d => {
-    const row = {date:d.date};
-    Object.entries(CLUSTERS).forEach(([n,{countries}]) => { row[n]=Math.round(countries.reduce((s,c)=>s+d[c],0)/countries.length); });
+    const row = {
+      date: d.date
+    };
+    Object.entries(CLUSTERS).forEach(([n, {
+      countries
+    }]) => {
+      row[n] = Math.round(countries.reduce((s, c) => s + d[c], 0) / countries.length);
+    });
     return row;
   }), []);
 
   // RES/BESS data
   const resData = useMemo(() => RES_DATA.map(d => {
-    const bt = showPipeline ? d.bess+d.pipeline : d.bess;
-    const ratio = bt>0 ? Math.round(d.res/bt*10)/10 : 999;
-    return {...d, bessTotal:bt, ratio, ratioLabel:ratio>=999?"∞":ratio.toFixed(1)};
-  }).sort((a,b) => resSort==='ratio'?b.ratio-a.ratio:resSort==='storageIdx'?b.storageIdx-a.storageIdx:b.res-a.res), [showPipeline,resSort]);
-
-  const corrData = resData.filter(d=>d.ratio<900);
-  const n=corrData.length, xm=corrData.reduce((s,d)=>s+d.ratio,0)/n, ym=corrData.reduce((s,d)=>s+d.storageIdx,0)/n;
-  const r = corrData.reduce((s,d)=>s+(d.ratio-xm)*(d.storageIdx-ym),0) / Math.sqrt(corrData.reduce((s,d)=>s+(d.ratio-xm)**2,0)*corrData.reduce((s,d)=>s+(d.storageIdx-ym)**2,0));
-
-  const TABS = [['summary','Strategic Summary'],['factors','Structural Factors'],['floor','Price Floor'],['ratio','RES/BESS Ratio'],['clusters','Market Clusters'],['timeseries','Time Series'],['sync','Baltic Sync']];
-
-  return (
-    <div style={{fontFamily:'Arial,sans-serif',color:'#3A4A5C',padding:16,maxWidth:'100%'}}>
-      {/* Header */}
-      <div style={{borderBottom:'3px solid #00897B',paddingBottom:8,marginBottom:12}}>
-        <h1 style={{margin:0,color:'#1B2A4A',fontSize:20,fontWeight:900}}>BESS European Market Intelligence</h1>
-        <p style={{margin:'2px 0 0',color:'#8B99A8',fontSize:11}}>Clean Horizon Storage Index · IRENA RES Capacity · 20 countries · Jan 2023 – Jan 2026</p>
-      </div>
-
-      {/* Tabs */}
-      <div style={{display:'flex',gap:4,marginBottom:14,flexWrap:'wrap'}}>
-        {TABS.map(([id,label])=>(
-          <button key={id} onClick={()=>setTab(id)} style={{
-            padding:'5px 12px',border:'none',borderRadius:4,cursor:'pointer',fontSize:11,fontWeight:600,
-            background:tab===id?'#1B2A4A':'#E8EDF2',color:tab===id?'#fff':'#3A4A5C'
-          }}>{label}</button>
-        ))}
-      </div>
-
-      {/* ═══ STRATEGIC SUMMARY ═══ */}
-      {tab==='summary' && (
-        <div>
-          <h2 style={{color:'#1B2A4A',fontSize:16,margin:'0 0 10px',borderBottom:'2px solid #00897B',paddingBottom:4}}>Strategic Summary: Where to Build BESS in Europe</h2>
-
-          <div style={{background:'#1B2A4A',borderRadius:6,padding:14,marginBottom:14}}>
-            <div style={{color:'#26C6DA',fontWeight:700,fontSize:13,marginBottom:6}}>Core Finding</div>
-            <div style={{color:'#E8EDF2',fontSize:12,lineHeight:1.7}}>
-              BESS revenue across Europe is driven by three structural factors that compound: (1) grid isolation creating trapped volatility,
-              (2) ancillary market design determining whether BESS can access that volatility, and (3) the RES/BESS supply ratio determining
-              how much competition exists. No single metric captures the opportunity — but the combination correctly identifies Latvia, Romania,
-              and Poland as the highest-value markets for new BESS deployment in 2026.
-            </div>
-          </div>
-
-          {/* Key numbers */}
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:8,marginBottom:14}}>
-            {[
-              {val:'€1,356k',label:'Latvia avg (post-sync)',sub:'+706% vs pre-sync',color:'#00897B'},
-              {val:'€435k',label:'Romania avg (2025)',sub:'Highest RES/BESS in CEE',color:'#E68A00'},
-              {val:'€424k',label:'Poland avg (2025)',sub:'10 GW pipeline arriving',color:'#AD1457'},
-              {val:'€237k',label:'Germany avg (2025)',sub:'Saturated, floor price',color:'#8B99A8'},
-              {val:'€97k',label:'Italy avg',sub:'Market access blocked',color:'#CC0000'},
-              {val:'r=0.35',label:'RES/BESS ↔ Revenue',sub:'Moderate correlation only',color:'#1565C0'},
-            ].map(m=>(
-              <div key={m.label} style={{background:'#fff',border:'1px solid #E8EDF2',borderTop:`3px solid ${m.color}`,borderRadius:4,padding:10,textAlign:'center'}}>
-                <div style={{fontSize:20,fontWeight:900,color:m.color}}>{m.val}</div>
-                <div style={{fontSize:10,fontWeight:600,color:'#1B2A4A',marginTop:2}}>{m.label}</div>
-                <div style={{fontSize:9,color:'#8B99A8'}}>{m.sub}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Five conclusions */}
-          <div style={{display:'grid',gap:8}}>
-            {[
-              {n:'1',title:'Baltic synchronisation is the single largest signal in European BESS markets',
-               text:'Estonia/Latvia/Lithuania jumped from 168 → 1,452 k€/MW/yr (+766%) post-Feb 2025. The rest of Europe moved -8%. This is a structural physics event (loss of Russian inertia) — not a temporary spike. The BBCM market is permanent. But the premium is compressing: Latvia peaked at €3,288k (May 2025) and is now at €533k (Jan 2026). First-mover window is 12–24 months.',
-               color:'#00897B'},
-              {n:'2',title:'Ancillary prices cannot reach zero — but they compress to the opportunity cost floor',
-               text:'UK precedent: £150k → £50k/MW/yr in 12 months when overbuild ratio hit 1.5×. The floor equals wholesale arbitrage revenue — BESS won\'t offer ancillary services below what they can earn trading. For the Baltics, this floor is ~€150–200k/yr once 1.5+ GW pipeline arrives (2028–2030). Your model\'s 40% floor (€216k) is well-calibrated against the German/French steady state (€219–251k).',
-               color:'#E68A00'},
-              {n:'3',title:'The RES/BESS ratio is necessary but not sufficient as an opportunity indicator',
-               text:'It correctly identifies Romania (200×, €435k) and Poland (187×, €424k) as strong. But it misses the Italy Paradox (23× ratio, lowest revenue — market access blocked) and the Baltic Exception (low RES, highest revenue — sync event). A 4-factor composite (ratio + grid isolation + market access + pipeline saturation) correlates better with actual revenue.',
-               color:'#1565C0'},
-              {n:'4',title:'Engycell dependency is the weakest link in the Latvian revenue chain',
-               text:'Your DSO-connected seed projects (Model A) access ancillary services only through VPP aggregation by a pre-seed startup (€450k raised, no AST prequalification). A proprietary trading entity (€100–180k setup) would eliminate this dependency and could be the highest-ROI investment available. Latvia\'s SPRK registration is straightforward — not license-based.',
-               color:'#CC0000'},
-              {n:'5',title:'BESS Platform target markets are correctly positioned across the opportunity spectrum',
-               text:'Latvia: extreme near-term premium (sync event + BBCM), compressing but debt repaid before saturation. Romania: highest structural ratio in CEE, growing duck curve, €150M+ subsidies, grid fee exemptions. Poland: strong but time-sensitive (€1bn subsidy + capacity market vs 10 GW pipeline). Slovakia/Czech: moderate ratio but near-zero competition + PowereX optimisation advantage.',
-               color:'#00897B'},
-            ].map(item=>(
-              <div key={item.n} style={{background:'#fff',border:'1px solid #E8EDF2',borderLeft:`4px solid ${item.color}`,borderRadius:4,padding:12}}>
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <div style={{width:24,height:24,borderRadius:12,background:item.color,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,flexShrink:0}}>{item.n}</div>
-                  <div style={{fontWeight:700,color:'#1B2A4A',fontSize:13}}>{item.title}</div>
-                </div>
-                <div style={{fontSize:11,color:'#3A4A5C',marginTop:6,lineHeight:1.6,paddingLeft:32}}>{item.text}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Target market table */}
-          <h3 style={{color:'#1B2A4A',fontSize:14,marginTop:16,marginBottom:6}}>BESS Platform Target Markets — Composite Assessment</h3>
-          <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
-              <thead><tr style={{background:'#1B2A4A',color:'#fff'}}>
-                {['Market','Revenue 2025','RES/BESS','Grid Isolation','Market Access','Pipeline Risk','Window','Verdict'].map(h=>(
-                  <th key={h} style={{padding:'5px 6px',textAlign:'left',fontWeight:600}}>{h}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {[
-                  {m:'Latvia',rev:'€1,356k',rat:'70×',gi:'★★★★★',ma:'★★★★',pr:'★★',w:'12–24mo',v:'EXCEPTIONAL',vc:'#00897B'},
-                  {m:'Romania',rev:'€435k',rat:'200×',gi:'★★★★',ma:'★★★',pr:'★★',w:'24–36mo',v:'HIGH',vc:'#00897B'},
-                  {m:'Poland',rev:'€424k',rat:'187×',gi:'★★★',ma:'★★★',pr:'★★★★',w:'12–18mo',v:'HIGH (time-sensitive)',vc:'#E68A00'},
-                  {m:'Slovakia',rev:'~€200k',rat:'150×',gi:'★★★',ma:'★★',pr:'★',w:'36+mo',v:'MEDIUM (low competition)',vc:'#1565C0'},
-                  {m:'Czech Rep.',rev:'~€220k',rat:'100×',gi:'★★★',ma:'★★',pr:'★★',w:'24–36mo',v:'MEDIUM',vc:'#1565C0'},
-                ].map((r,i)=>(
-                  <tr key={r.m} style={{background:i%2===0?'#fff':'#F5F7FA'}}>
-                    <td style={{padding:'5px 6px',fontWeight:700}}>{r.m}</td>
-                    <td style={{padding:'5px 6px',color:'#00897B',fontWeight:700}}>{r.rev}</td>
-                    <td style={{padding:'5px 6px'}}>{r.rat}</td>
-                    <td style={{padding:'5px 6px'}}>{r.gi}</td>
-                    <td style={{padding:'5px 6px'}}>{r.ma}</td>
-                    <td style={{padding:'5px 6px'}}>{r.pr}</td>
-                    <td style={{padding:'5px 6px'}}>{r.w}</td>
-                    <td style={{padding:'5px 6px',fontWeight:700,color:r.vc}}>{r.v}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div style={{background:'#E0F2F1',borderLeft:'4px solid #00897B',padding:12,borderRadius:4,marginTop:12,fontSize:11,lineHeight:1.6}}>
-            <b>Model validation:</b> Your €45k/MW/month assumption matches Clean Horizon Jan 2026 data exactly (€533k/yr = €44k/mo).
-            The -18%/yr taper and 40% floor (€216k) sit between Germany (€237k) and France (€316k) — conservative but realistic.
-            5-year Signet Bank debt fully repaid before anticipated Baltic saturation (2028–2030). The seed portfolio works on pure arbitrage;
-            ancillary revenue via proprietary trading entity or Engycell VPP is upside.
-          </div>
-        </div>
-      )}
-
-      {/* ═══ CLUSTER OVERVIEW ═══ */}
-      {tab==='clusters' && (
-        <div>
-          <h2 style={{color:'#1B2A4A',fontSize:16,margin:'0 0 8px'}}>Four Market Clusters (PCA + K-means)</h2>
-          <p style={{fontSize:11,color:'#8B99A8',margin:'0 0 10px'}}>PC1 (49%) separates declining mature from emerging. PC2 (22%) captures Baltic sync shock. Latvia-Lithuania r=0.991.</p>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:8,marginBottom:12}}>
-            {Object.entries(CLUSTERS).map(([name,{countries,color}])=>{
-              const avg=Math.round(countries.map(c=>siStats.find(s=>s.country===c)?.mean||0).reduce((a,b)=>a+b,0)/countries.length);
-              return(<div key={name} style={{border:`2px solid ${color}`,borderRadius:6,padding:10,cursor:'pointer'}} onClick={()=>{setSelCountries(countries);setTab('timeseries');}}>
-                <div style={{fontSize:10,fontWeight:700,color,textTransform:'uppercase'}}>{name}</div>
-                <div style={{fontSize:22,fontWeight:900,color:'#1B2A4A'}}>{avg}<span style={{fontSize:11,color:'#8B99A8'}}> k€/MW/yr</span></div>
-                <div style={{fontSize:10,color:'#3A4A5C'}}>{countries.join(', ')}</div>
-              </div>);
-            })}
-          </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={clusterAvg}><CartesianGrid strokeDasharray="3 3" stroke="#E8EDF2"/><XAxis dataKey="date" tick={{fontSize:9}} interval={5}/><YAxis tick={{fontSize:9}}/><Tooltip/><ReferenceLine x="2025-02" stroke="#CC0000" strokeDasharray="4 4" label={{value:"Sync",position:"top",fontSize:9}}/>
-              {Object.entries(CLUSTERS).map(([n,{color}])=>(<Line key={n} type="monotone" dataKey={n} stroke={color} strokeWidth={2} dot={false}/>))}
-              <Legend wrapperStyle={{fontSize:10}}/>
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* ═══ TIME SERIES ═══ */}
-      {tab==='timeseries' && (
-        <div>
-          <h2 style={{color:'#1B2A4A',fontSize:16,margin:'0 0 6px'}}>Revenue Time Series (k€/MW/year)</h2>
-          <div style={{display:'flex',flexWrap:'wrap',gap:3,marginBottom:8}}>
-            {SI_COUNTRIES.map(c=>(<button key={c} onClick={()=>toggle(c)} style={{padding:'2px 7px',border:`2px solid ${SI_COLORS[c]}`,borderRadius:3,background:selCountries.includes(c)?SI_COLORS[c]:'#fff',color:selCountries.includes(c)?'#fff':SI_COLORS[c],fontSize:9,fontWeight:600,cursor:'pointer'}}>{c}</button>))}
-          </div>
-          <div style={{display:'flex',gap:4,marginBottom:8,flexWrap:'wrap'}}>
-            {Object.entries(CLUSTERS).map(([n,{countries,color}])=>(<button key={n} onClick={()=>setSelCountries(countries)} style={{padding:'2px 7px',border:`1px solid ${color}`,borderRadius:3,background:'#fff',color,fontSize:9,cursor:'pointer'}}>{n}</button>))}
-            <button onClick={()=>setSelCountries(SI_COUNTRIES)} style={{padding:'2px 7px',border:'1px solid #8B99A8',borderRadius:3,background:'#fff',color:'#8B99A8',fontSize:9,cursor:'pointer'}}>All</button>
-          </div>
-          <ResponsiveContainer width="100%" height={340}>
-            <LineChart data={SI_DATA}><CartesianGrid strokeDasharray="3 3" stroke="#E8EDF2"/><XAxis dataKey="date" tick={{fontSize:9}} interval={5}/><YAxis tick={{fontSize:9}}/><Tooltip/><ReferenceLine x="2025-02" stroke="#CC0000" strokeDasharray="4 4"/>
-              {selCountries.map(c=>(<Line key={c} type="monotone" dataKey={c} stroke={SI_COLORS[c]} strokeWidth={1.5} dot={false}/>))}<Legend wrapperStyle={{fontSize:9}}/>
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* ═══ BALTIC SYNC ═══ */}
-      {tab==='sync' && (
-        <div>
-          <h2 style={{color:'#1B2A4A',fontSize:16,margin:'0 0 6px'}}>Baltic Synchronisation Impact (Feb 2025)</h2>
-          <p style={{fontSize:11,color:'#8B99A8',margin:'0 0 10px'}}>Pre-sync vs post-sync average revenue. Baltics: +766%. Rest of Europe: -8%.</p>
-          <ResponsiveContainer width="100%" height={380}>
-            <BarChart data={siStats} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#E8EDF2"/><XAxis type="number" tick={{fontSize:9}} domain={[-100,900]}/>
-              <YAxis dataKey="country" type="category" tick={{fontSize:10}} width={85}/><Tooltip formatter={v=>`${v}%`}/>
-              <Bar dataKey="syncChange" name="Post-sync Δ%">{siStats.map((s,i)=>(<Cell key={i} fill={s.syncChange>100?'#00897B':s.syncChange>0?'#1565C0':s.syncChange>-30?'#E68A00':'#CC0000'}/>))}</Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:10}}>
-            <div style={{background:'#E0F2F1',borderLeft:'4px solid #00897B',padding:10,borderRadius:4}}>
-              <div style={{fontWeight:700,color:'#00897B',fontSize:12}}>Baltics: +766%</div>
-              <div style={{fontSize:10,marginTop:3}}>168 → 1,452 k€/MW/yr. Loss of Russian inertia + BBCM launch + acute supply shortage. Compressing from peak but structurally elevated.</div>
-            </div>
-            <div style={{background:'#FFF3E0',borderLeft:'4px solid #E68A00',padding:10,borderRadius:4}}>
-              <div style={{fontWeight:700,color:'#E68A00',fontSize:12}}>Rest of Europe: -8%</div>
-              <div style={{fontSize:10,marginTop:3}}>Declining in mature markets (Belgium -58%). Growing in CEE (Poland +131%, Romania +123%) from solar buildout. Germany flat.</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ RES/BESS RATIO ═══ */}
-      {tab==='ratio' && (
-        <div>
-          <h2 style={{color:'#1B2A4A',fontSize:16,margin:'0 0 6px'}}>RES-to-BESS Ratio: Opportunity Indicator?</h2>
-          <div style={{background:'#1B2A4A',borderRadius:6,padding:12,marginBottom:10}}>
-            <div style={{color:'#E68A00',fontWeight:700,fontSize:12}}>Verdict: Partially Correct</div>
-            <div style={{color:'#E8EDF2',fontSize:11,marginTop:3}}>
-              Moderate positive correlation (r={r.toFixed(2)}) with actual revenue. Misses grid isolation (Baltics) and market design (Italy). Better as one factor in a 4-factor composite.
-            </div>
-          </div>
-          <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap',alignItems:'center'}}>
-            <span style={{fontSize:10,fontWeight:600}}>Sort:</span>
-            {[['ratio','Ratio'],['storageIdx','Revenue'],['res','RES GW']].map(([id,l])=>(<button key={id} onClick={()=>setResSort(id)} style={{padding:'3px 8px',border:'none',borderRadius:3,cursor:'pointer',fontSize:10,fontWeight:600,background:resSort===id?'#1B2A4A':'#E8EDF2',color:resSort===id?'#fff':'#3A4A5C'}}>{l}</button>))}
-            <label style={{fontSize:10,cursor:'pointer',display:'flex',alignItems:'center',gap:3,marginLeft:8}}>
-              <input type="checkbox" checked={showPipeline} onChange={()=>setShowPipeline(!showPipeline)}/>
-              <span style={{fontWeight:600,color:showPipeline?'#00897B':'#8B99A8'}}>Include pipeline</span>
-            </label>
-          </div>
-          <ResponsiveContainer width="100%" height={440}>
-            <BarChart data={resData} layout="vertical" margin={{left:75}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E8EDF2"/><XAxis type="number" tick={{fontSize:9}}/><YAxis dataKey="country" type="category" tick={{fontSize:10}} width={75}/>
-              <Tooltip content={({active,payload})=>{if(!active||!payload?.length)return null;const d=payload[0].payload;return(<div style={{background:'#fff',border:'1px solid #E8EDF2',padding:8,borderRadius:4,fontSize:10}}><div style={{fontWeight:700}}>{d.country}</div><div>RES: {d.res} GW | BESS: {d.bess} GW{showPipeline?` (+${d.pipeline} pipeline)`:''}</div><div>Ratio: {d.ratioLabel} | Revenue: {d.storageIdx} k€/MW/yr</div></div>);}}/>
-              <Bar dataKey="ratio">{resData.map((d,i)=>(<Cell key={i} fill={REG_COLORS[d.region]||'#8B99A8'}/>))}</Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div style={{display:'flex',gap:8,justifyContent:'center',marginTop:6,flexWrap:'wrap'}}>
-            {Object.entries(REG_COLORS).map(([r,c])=>(<div key={r} style={{display:'flex',alignItems:'center',gap:3,fontSize:10}}><div style={{width:10,height:10,borderRadius:2,background:c}}/>{r}</div>))}
-          </div>
-          <h3 style={{color:'#1B2A4A',fontSize:13,marginTop:14,marginBottom:6}}>Ratio vs Actual Revenue (r = {r.toFixed(2)})</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <ScatterChart margin={{left:10,right:20,bottom:15}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E8EDF2"/><XAxis dataKey="ratio" type="number" tick={{fontSize:9}} label={{value:'RES/BESS Ratio →',position:'bottom',fontSize:10}} domain={[0,showPipeline?'auto':300]}/>
-              <YAxis dataKey="storageIdx" type="number" tick={{fontSize:9}} label={{value:'Revenue →',angle:-90,position:'insideLeft',fontSize:10}}/>
-              <Tooltip content={({active,payload})=>{if(!active||!payload?.length)return null;const d=payload[0].payload;return(<div style={{background:'#fff',border:'1px solid #E8EDF2',padding:6,borderRadius:3,fontSize:10}}><b>{d.country}</b><br/>Ratio: {d.ratioLabel} | Rev: {d.storageIdx}</div>);}}/>
-              <Scatter data={corrData}>{corrData.map((d,i)=>(<Cell key={i} fill={REG_COLORS[d.region]} r={d.syncEvent?7:4}/>))}</Scatter>
-            </ScatterChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* ═══ PRICE FLOOR ═══ */}
-      {tab==='floor' && (
-        <div>
-          <h2 style={{color:'#1B2A4A',fontSize:16,margin:'0 0 8px'}}>Can Ancillary Prices Go to Zero? Where Do They Converge?</h2>
-
-          {/* Core answer */}
-          <div style={{background:'#1B2A4A',borderRadius:7,padding:16,marginBottom:14}}>
-            <div style={{color:'#26C6DA',fontWeight:700,fontSize:13,marginBottom:5}}>Short Answer: No — But They Can Compress 60–70%</div>
-            <p style={{color:'#E8EDF2',fontSize:12,lineHeight:1.7,margin:0}}>
-              Ancillary service prices have a structural floor above zero because TSOs are <strong>legally obligated</strong> to
-              procure minimum volumes of FCR, aFRR, and mFRR every day under EU regulations. Even with massive BESS oversupply,
-              someone still gets paid. The floor is set by the <strong>opportunity cost</strong> of the marginal BESS unit — what
-              it could earn doing arbitrage instead. Prices compress <em>toward</em> arbitrage levels, but never below them.
-            </p>
-          </div>
-
-          {/* The mechanism */}
-          <h3 style={{color:'#1B2A4A',fontSize:14,margin:'16px 0 8px',borderBottom:'2px solid #00897B',paddingBottom:4}}>The Compression Mechanism</h3>
-
-          <div style={{display:'grid',gap:8,marginBottom:14}}>
-            {[
-              { step:'1', title:'BESS capacity exceeds ancillary demand',
-                text:'The overbuild ratio (available BESS MW ÷ total service demand MW) crosses 1.0. Multiple batteries compete for the same FCR/aFRR/mFRR slots. Auction clearing prices fall.',
-                color:'#E68A00' },
-              { step:'2', title:'Ancillary prices converge toward arbitrage opportunity cost',
-                text:'A battery won\'t offer ancillary capacity for €30/MW/h if it can earn €50/MW/h trading on Nord Pool. The floor for ancillary prices equals what BESS can earn in wholesale markets. At overbuild ratios of 1.5–2.0×, this convergence is largely complete.',
-                color:'#E68A00' },
-              { step:'3', title:'Arbitrage itself compresses (the double squeeze)',
-                text:'More BESS absorbing the same price spreads flattens the duck curve. Midday lows rise (more batteries charging), evening peaks fall (more discharging). Both revenue streams decline together — but neither reaches zero because supply/demand volatility from weather is irreducible.',
-                color:'#CC0000' },
-              { step:'4', title:'New products expand the addressable market',
-                text:'TSOs create new service categories as old ones saturate. Germany launched an inertia market in Jan 2026. Greece opened balancing to BESS. Spain introduced voltage control rules. The total revenue stack grows even as individual product prices compress.',
-                color:'#00897B' },
-            ].map(({step,title,text,color})=>(
-              <div key={step} style={{background:'#fff',border:'1px solid #E8EDF2',borderLeft:`4px solid ${color}`,borderRadius:5,padding:12}}>
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <div style={{width:24,height:24,borderRadius:12,background:color,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,flexShrink:0}}>{step}</div>
-                  <div style={{fontWeight:700,color:'#1B2A4A',fontSize:13}}>{title}</div>
-                </div>
-                <div style={{fontSize:11,color:'#3A4A5C',marginTop:5,paddingLeft:32,lineHeight:1.6}}>{text}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* UK precedent */}
-          <h3 style={{color:'#1B2A4A',fontSize:14,margin:'16px 0 8px',borderBottom:'2px solid #00897B',paddingBottom:4}}>Real-World Evidence: The UK Crash</h3>
-
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
-            <div style={{background:'#fff',border:'1px solid #E8EDF2',borderRadius:6,padding:14,textAlign:'center'}}>
-              <div style={{fontSize:10,color:'#8B99A8',fontWeight:600}}>UK BESS Revenue 2022</div>
-              <div style={{fontSize:32,fontWeight:900,color:'#00897B',fontFamily:'monospace'}}>£150k</div>
-              <div style={{fontSize:10,color:'#8B99A8'}}>per MW/year</div>
-              <div style={{fontSize:10,color:'#3A4A5C',marginTop:6}}>Scarce supply, high FCR prices</div>
-            </div>
-            <div style={{background:'#fff',border:'1px solid #E8EDF2',borderRadius:6,padding:14,textAlign:'center'}}>
-              <div style={{fontSize:10,color:'#8B99A8',fontWeight:600}}>UK BESS Revenue 2023</div>
-              <div style={{fontSize:32,fontWeight:900,color:'#CC0000',fontFamily:'monospace'}}>£50k</div>
-              <div style={{fontSize:10,color:'#8B99A8'}}>per MW/year</div>
-              <div style={{fontSize:10,color:'#CC0000',marginTop:6,fontWeight:600}}>–67% in 12 months</div>
-            </div>
-          </div>
-          <div style={{background:'#FFF3E0',borderLeft:'4px solid #E68A00',padding:12,borderRadius:4,fontSize:11,lineHeight:1.6,marginBottom:14}}>
-            <strong style={{color:'#E68A00'}}>What happened:</strong> UK frequency capacity overbuild ratio exceeded 1.5×.
-            Prices collapsed to near the wholesale arbitrage opportunity cost — but not to zero.
-            BESS assets pivoted from pure ancillary to revenue-stacking (arbitrage + ancillary + balancing energy).
-            The same pattern is beginning in Germany where ~580 MW of BESS is prequalified for aFRR against
-            ~2 GW TSO procurement. At 35% prequalification of the expected 5.7 GW fleet by end-2026,
-            supply will match demand — triggering the same compression.
-          </div>
-
-          {/* The overbuild ratio concept */}
-          <h3 style={{color:'#1B2A4A',fontSize:14,margin:'16px 0 8px',borderBottom:'2px solid #00897B',paddingBottom:4}}>The Overbuild Ratio — Key Saturation Indicator</h3>
-
-          <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
-              <thead><tr style={{background:'#1B2A4A',color:'#fff'}}>
-                {['Overbuild Ratio','Market Phase','Price Behaviour','Example'].map(h=>(
-                  <th key={h} style={{padding:'6px 8px',textAlign:'left',fontWeight:600}}>{h}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {[
-                  {r:'< 0.5×',ph:'Acute scarcity',pr:'Extreme premiums. 2–10× vs mature markets.',ex:'Baltics Feb–May 2025 (€1,500–5,300k)',c:'#00897B'},
-                  {r:'0.5–1.0×',ph:'Tightening',pr:'Premiums compressing. First movers still earn well.',ex:'Baltics H2 2025 (€500–1,400k)',c:'#E68A00'},
-                  {r:'1.0–1.5×',ph:'Balanced → oversupplied',pr:'Prices converging toward arbitrage floor.',ex:'Germany aFRR 2025–2026',c:'#E68A00'},
-                  {r:'1.5–2.0×',ph:'Saturated',pr:'At or near opportunity cost. Revenue stacking essential.',ex:'UK 2023 (£50k/MW/yr)',c:'#CC0000'},
-                  {r:'> 2.0×',ph:'Oversaturated',pr:'Some BESS exits market. Weakest assets idle.',ex:'Not yet observed in Europe',c:'#CC0000'},
-                ].map((row,i)=>(
-                  <tr key={row.r} style={{background:i%2===0?'#fff':'#F5F7FA'}}>
-                    <td style={{padding:'6px 8px',fontWeight:700,fontFamily:'monospace'}}>{row.r}</td>
-                    <td style={{padding:'6px 8px',fontWeight:600,color:row.c}}>{row.ph}</td>
-                    <td style={{padding:'6px 8px'}}>{row.pr}</td>
-                    <td style={{padding:'6px 8px',fontSize:10,color:'#8B99A8'}}>{row.ex}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Baltic-specific convergence */}
-          <h3 style={{color:'#1B2A4A',fontSize:14,margin:'16px 0 8px',borderBottom:'2px solid #00897B',paddingBottom:4}}>Baltic Price Convergence Forecast</h3>
-
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',gap:8,marginBottom:14}}>
-            {[
-              {period:'2026–2027',label:'PREMIUM',rev:'€400–600k',clr:'#00897B',
-               note:'First-mover scarcity. ~830 MW demand vs <500 MW commercial BESS. Your Signet debt repays here.'},
-              {period:'2028–2029',label:'COMPRESSION',rev:'€200–350k',clr:'#E68A00',
-               note:'1.5 GW pipeline arriving. Overbuild ratio crosses 1.0×. Ancillary and arbitrage both compress.'},
-              {period:'2030–2032',label:'MATURITY',rev:'€150–220k',clr:'#8B99A8',
-               note:'Converges toward Germany/France steady state (€219–251k). New products (inertia, voltage) partially offset.'},
-            ].map(({period,label,rev,clr,note})=>(
-              <div key={period} style={{background:'#fff',border:`2px solid ${clr}`,borderRadius:6,padding:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:clr,textTransform:'uppercase',letterSpacing:0.5}}>{label}</div>
-                <div style={{fontSize:11,fontWeight:600,color:'#1B2A4A',marginTop:2}}>{period}</div>
-                <div style={{fontSize:22,fontWeight:900,color:clr,margin:'6px 0',fontFamily:'monospace'}}>{rev}</div>
-                <div style={{fontSize:10,color:'#3A4A5C',lineHeight:1.5}}>{note}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Why not zero - structural reasons */}
-          <h3 style={{color:'#1B2A4A',fontSize:14,margin:'16px 0 8px',borderBottom:'2px solid #00897B',paddingBottom:4}}>Five Reasons Ancillary Prices Cannot Reach Zero</h3>
-
-          <div style={{display:'grid',gap:8,marginBottom:14}}>
-            {[
-              {n:'1',title:'Legal procurement obligation',
-                text:'EU Electricity Balancing Guidelines mandate TSOs procure FCR, aFRR, and mFRR daily. AST, Elering, and Litgrid run BBCM auctions every morning. Even if 10 GW of BESS were available and only 830 MW needed, someone gets paid for 830 MW.',
-                color:'#1565C0'},
-              {n:'2',title:'Opportunity cost floor',
-                text:'A battery earning €50/MW/h on Nord Pool arbitrage will not bid ancillary capacity below €50/MW/h. The floor for ancillary capacity prices equals wholesale arbitrage revenue. Ancillary prices compress toward arbitrage — but cannot go below.',
-                color:'#1565C0'},
-              {n:'3',title:'Irreducible weather volatility',
-                text:'Wind output fluctuates 0–100% within hours. Solar drops to zero at sunset. These physical intermittencies create wholesale price spreads that cannot be arbitraged to zero regardless of BESS capacity — there will always be a duck curve as long as renewables generate.',
-                color:'#00897B'},
-              {n:'4',title:'Expanding demand',
-                text:'Every GW of new wind/solar increases balancing demand. The Baltics plan 100% renewable electricity by 2030. Even as BESS supply grows, the volume of ancillary services the TSOs need to procure grows too — partially offsetting price compression.',
-                color:'#00897B'},
-              {n:'5',title:'New revenue products being created',
-                text:'Germany: inertia market (Jan 2026, fixed-price contracts). Greece: opened BESS to balancing. Spain: new voltage control rules. Grid-forming requirements (ENTSO-E Phase II) create premium revenue for compliant BESS. The total addressable revenue stack expands even as individual product prices compress.',
-                color:'#00897B'},
-            ].map(({n,title,text,color})=>(
-              <div key={n} style={{background:'#fff',border:'1px solid #E8EDF2',borderLeft:`4px solid ${color}`,borderRadius:5,padding:12}}>
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <div style={{width:24,height:24,borderRadius:12,background:color,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,flexShrink:0}}>{n}</div>
-                  <div style={{fontWeight:700,color:'#1B2A4A',fontSize:13}}>{title}</div>
-                </div>
-                <div style={{fontSize:11,color:'#3A4A5C',marginTop:5,paddingLeft:32,lineHeight:1.6}}>{text}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Model validation */}
-          <div style={{background:'#E0F2F1',borderLeft:'4px solid #00897B',padding:14,borderRadius:5,fontSize:12,lineHeight:1.7}}>
-            <strong style={{color:'#1B2A4A'}}>Model validation against this analysis:</strong> Your revenue assumption of €45k/MW/month (=€540k/yr)
-            with -18%/yr taper and 40% floor (=€216k/yr) maps precisely onto the convergence trajectory above.
-            The 40% floor sits between Germany (€237k, saturated) and France (€251k, moderate competition) — mature
-            European steady state. Your Signet Bank debt (5-year tenor) is fully repaid in the premium/compression phase
-            (2026–2029) before prices reach the floor. The real risk isn't zero prices — it's capital recovery timing, and
-            your structure already handles that correctly.
-          </div>
-        </div>
-      )}
-
-      {/* ═══ STRUCTURAL FACTORS ═══ */}
-      {tab==='factors' && (
-        <div>
-          <h2 style={{color:'#1B2A4A',fontSize:16,margin:'0 0 8px'}}>Six Structural Factors Explaining European BESS Revenue Variance</h2>
-          <div style={{display:'grid',gap:8}}>
-            {[
-              {f:'1. Grid isolation / interconnection',impact:'HIGH',c:'#CC0000',t:'Islands and semi-islands (Baltics, DK2, Iberia) show 107% avg CV vs 56% for well-connected. Trapped volatility = higher BESS value per MW.'},
-              {f:'2. Synchronisation events',impact:'EXTREME',c:'#CC0000',t:'Baltic desync from Russia: +766%. A one-time structural shift — permanent loss of Russian inertia. The single largest signal in the entire dataset.'},
-              {f:'3. Renewable duck curve',impact:'HIGH',c:'#E68A00',t:'DK2/Sweden: 2–3× summer/winter ratio from wind/solar oversupply. Romania nearly flat (1.08×). Poland/Germany duck curves growing with solar buildout.'},
-              {f:'4. Ancillary market design',impact:'MED-HIGH',c:'#E68A00',t:'Baltic BBCM: 2–10× Finnish prices. Italy: lowest revenue despite high RES because ancillary market was closed to BESS. Market access rules override fundamentals.'},
-              {f:'5. BESS saturation / overbuild ratio',impact:'MEDIUM',c:'#1565C0',t:'UK: £150k→£50k when overbuild ratio hit 1.5×. Belgium: 492→208. Prices converge to arbitrage opportunity cost — never zero, but can compress 60–70%.'},
-              {f:'6. Seasonality patterns',impact:'VARIES',c:'#8B99A8',t:'Baltics: 3× summer premium. Romania: nearly flat year-round. Revenue predictability varies dramatically — affects bankability and debt structuring.'},
-            ].map(({f,impact,c,t})=>(
-              <div key={f} style={{background:'#fff',border:'1px solid #E8EDF2',borderLeft:`4px solid ${c}`,borderRadius:4,padding:10}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <div style={{fontWeight:700,color:'#1B2A4A',fontSize:12}}>{f}</div>
-                  <div style={{fontSize:9,fontWeight:700,color:c,background:`${c}15`,padding:'2px 6px',borderRadius:3}}>{impact}</div>
-                </div>
-                <div style={{fontSize:11,color:'#3A4A5C',marginTop:4,lineHeight:1.5}}>{t}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ SUMMARY TABLE (always visible) ═══ */}
-      <div style={{marginTop:16,overflowX:'auto'}}>
-        <table style={{width:'100%',borderCollapse:'collapse',fontSize:10}}>
-          <thead><tr style={{background:'#1B2A4A',color:'#fff'}}>
-            {['Country','Mean','Latest (Jan 26)','Pre-Sync','Post-Sync','Δ%'].map(h=>(<th key={h} style={{padding:'4px 5px',textAlign:'left',fontWeight:600}}>{h}</th>))}
-          </tr></thead>
-          <tbody>{siStats.map((s,i)=>(
-            <tr key={s.country} style={{background:i%2===0?'#fff':'#F5F7FA'}}>
-              <td style={{padding:'3px 5px',fontWeight:600,color:SI_COLORS[s.country]}}>{s.country}</td>
-              <td style={{padding:'3px 5px'}}>{s.mean}</td>
-              <td style={{padding:'3px 5px'}}>{s.latest}</td>
-              <td style={{padding:'3px 5px'}}>{s.preMean}</td>
-              <td style={{padding:'3px 5px'}}>{s.postMean}</td>
-              <td style={{padding:'3px 5px',fontWeight:700,color:s.syncChange>100?'#00897B':s.syncChange>0?'#1565C0':'#CC0000'}}>{s.syncChange>0?'+':''}{s.syncChange}%</td>
-            </tr>
-          ))}</tbody>
-        </table>
-      </div>
-      <p style={{fontSize:9,color:'#8B99A8',marginTop:8}}>Sources: Clean Horizon Storage Index (uploaded), IRENA Renewable Capacity Statistics 2025, SolarPower Europe EMMES 2025, Wood Mackenzie, Modo Energy, Energy-Storage.News, AST Latvia, Elering, national TSO/regulator reports.</p>
-    </div>
-  );
+    const bt = showPipeline ? d.bess + d.pipeline : d.bess;
+    const ratio = bt > 0 ? Math.round(d.res / bt * 10) / 10 : 999;
+    return {
+      ...d,
+      bessTotal: bt,
+      ratio,
+      ratioLabel: ratio >= 999 ? "∞" : ratio.toFixed(1)
+    };
+  }).sort((a, b) => resSort === 'ratio' ? b.ratio - a.ratio : resSort === 'storageIdx' ? b.storageIdx - a.storageIdx : b.res - a.res), [showPipeline, resSort]);
+  const corrData = resData.filter(d => d.ratio < 900);
+  const n = corrData.length,
+    xm = corrData.reduce((s, d) => s + d.ratio, 0) / n,
+    ym = corrData.reduce((s, d) => s + d.storageIdx, 0) / n;
+  const r = corrData.reduce((s, d) => s + (d.ratio - xm) * (d.storageIdx - ym), 0) / Math.sqrt(corrData.reduce((s, d) => s + (d.ratio - xm) ** 2, 0) * corrData.reduce((s, d) => s + (d.storageIdx - ym) ** 2, 0));
+  const TABS = [['summary', 'Strategic Summary'], ['factors', 'Structural Factors'], ['floor', 'Price Floor'], ['ratio', 'RES/BESS Ratio'], ['clusters', 'Market Clusters'], ['timeseries', 'Time Series'], ['sync', 'Baltic Sync']];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Arial,sans-serif',
+      color: '#3A4A5C',
+      padding: 16,
+      maxWidth: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderBottom: '3px solid #00897B',
+      paddingBottom: 8,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      margin: 0,
+      color: '#1B2A4A',
+      fontSize: 20,
+      fontWeight: 900
+    }
+  }, "BESS European Market Intelligence"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: '2px 0 0',
+      color: '#8B99A8',
+      fontSize: 11
+    }
+  }, "Clean Horizon Storage Index \xB7 IRENA RES Capacity \xB7 20 countries \xB7 Jan 2023 \u2013 Jan 2026")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 4,
+      marginBottom: 14,
+      flexWrap: 'wrap'
+    }
+  }, TABS.map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => setTab(id),
+    style: {
+      padding: '5px 12px',
+      border: 'none',
+      borderRadius: 4,
+      cursor: 'pointer',
+      fontSize: 11,
+      fontWeight: 600,
+      background: tab === id ? '#1B2A4A' : '#E8EDF2',
+      color: tab === id ? '#fff' : '#3A4A5C'
+    }
+  }, label))), tab === 'summary' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 16,
+      margin: '0 0 10px',
+      borderBottom: '2px solid #00897B',
+      paddingBottom: 4
+    }
+  }, "Strategic Summary: Where to Build BESS in Europe"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#1B2A4A',
+      borderRadius: 6,
+      padding: 14,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: '#26C6DA',
+      fontWeight: 700,
+      fontSize: 13,
+      marginBottom: 6
+    }
+  }, "Core Finding"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: '#E8EDF2',
+      fontSize: 12,
+      lineHeight: 1.7
+    }
+  }, "BESS revenue across Europe is driven by three structural factors that compound: (1) grid isolation creating trapped volatility, (2) ancillary market design determining whether BESS can access that volatility, and (3) the RES/BESS supply ratio determining how much competition exists. No single metric captures the opportunity \u2014 but the combination correctly identifies Latvia, Romania, and Poland as the highest-value markets for new BESS deployment in 2026.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))',
+      gap: 8,
+      marginBottom: 14
+    }
+  }, [{
+    val: '€1,356k',
+    label: 'Latvia avg (post-sync)',
+    sub: '+706% vs pre-sync',
+    color: '#00897B'
+  }, {
+    val: '€435k',
+    label: 'Romania avg (2025)',
+    sub: 'Highest RES/BESS in CEE',
+    color: '#E68A00'
+  }, {
+    val: '€424k',
+    label: 'Poland avg (2025)',
+    sub: '10 GW pipeline arriving',
+    color: '#AD1457'
+  }, {
+    val: '€237k',
+    label: 'Germany avg (2025)',
+    sub: 'Saturated, floor price',
+    color: '#8B99A8'
+  }, {
+    val: '€97k',
+    label: 'Italy avg',
+    sub: 'Market access blocked',
+    color: '#CC0000'
+  }, {
+    val: 'r=0.35',
+    label: 'RES/BESS ↔ Revenue',
+    sub: 'Moderate correlation only',
+    color: '#1565C0'
+  }].map(m => /*#__PURE__*/React.createElement("div", {
+    key: m.label,
+    style: {
+      background: '#fff',
+      border: '1px solid #E8EDF2',
+      borderTop: `3px solid ${m.color}`,
+      borderRadius: 4,
+      padding: 10,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 900,
+      color: m.color
+    }
+  }, m.val), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 600,
+      color: '#1B2A4A',
+      marginTop: 2
+    }
+  }, m.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: '#8B99A8'
+    }
+  }, m.sub)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gap: 8
+    }
+  }, [{
+    n: '1',
+    title: 'Baltic synchronisation is the single largest signal in European BESS markets',
+    text: 'Estonia/Latvia/Lithuania jumped from 168 → 1,452 k€/MW/yr (+766%) post-Feb 2025. The rest of Europe moved -8%. This is a structural physics event (loss of Russian inertia) — not a temporary spike. The BBCM market is permanent. But the premium is compressing: Latvia peaked at €3,288k (May 2025) and is now at €533k (Jan 2026). First-mover window is 12–24 months.',
+    color: '#00897B'
+  }, {
+    n: '2',
+    title: 'Ancillary prices cannot reach zero — but they compress to the opportunity cost floor',
+    text: 'UK precedent: £150k → £50k/MW/yr in 12 months when overbuild ratio hit 1.5×. The floor equals wholesale arbitrage revenue — BESS won\'t offer ancillary services below what they can earn trading. For the Baltics, this floor is ~€150–200k/yr once 1.5+ GW pipeline arrives (2028–2030). Your model\'s 40% floor (€216k) is well-calibrated against the German/French steady state (€219–251k).',
+    color: '#E68A00'
+  }, {
+    n: '3',
+    title: 'The RES/BESS ratio is necessary but not sufficient as an opportunity indicator',
+    text: 'It correctly identifies Romania (200×, €435k) and Poland (187×, €424k) as strong. But it misses the Italy Paradox (23× ratio, lowest revenue — market access blocked) and the Baltic Exception (low RES, highest revenue — sync event). A 4-factor composite (ratio + grid isolation + market access + pipeline saturation) correlates better with actual revenue.',
+    color: '#1565C0'
+  }, {
+    n: '4',
+    title: 'Engycell dependency is the weakest link in the Latvian revenue chain',
+    text: 'Your DSO-connected seed projects (Model A) access ancillary services only through VPP aggregation by a pre-seed startup (€450k raised, no AST prequalification). A proprietary trading entity (€100–180k setup) would eliminate this dependency and could be the highest-ROI investment available. Latvia\'s SPRK registration is straightforward — not license-based.',
+    color: '#CC0000'
+  }, {
+    n: '5',
+    title: 'BESS Platform target markets are correctly positioned across the opportunity spectrum',
+    text: 'Latvia: extreme near-term premium (sync event + BBCM), compressing but debt repaid before saturation. Romania: highest structural ratio in CEE, growing duck curve, €150M+ subsidies, grid fee exemptions. Poland: strong but time-sensitive (€1bn subsidy + capacity market vs 10 GW pipeline). Slovakia/Czech: moderate ratio but near-zero competition + PowereX optimisation advantage.',
+    color: '#00897B'
+  }].map(item => /*#__PURE__*/React.createElement("div", {
+    key: item.n,
+    style: {
+      background: '#fff',
+      border: '1px solid #E8EDF2',
+      borderLeft: `4px solid ${item.color}`,
+      borderRadius: 4,
+      padding: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      background: item.color,
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 12,
+      fontWeight: 700,
+      flexShrink: 0
+    }
+  }, item.n), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: '#1B2A4A',
+      fontSize: 13
+    }
+  }, item.title)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#3A4A5C',
+      marginTop: 6,
+      lineHeight: 1.6,
+      paddingLeft: 32
+    }
+  }, item.text)))), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 14,
+      marginTop: 16,
+      marginBottom: 6
+    }
+  }, "BESS Platform Target Markets \u2014 Composite Assessment"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: 11
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    style: {
+      background: '#1B2A4A',
+      color: '#fff'
+    }
+  }, ['Market', 'Revenue 2025', 'RES/BESS', 'Grid Isolation', 'Market Access', 'Pipeline Risk', 'Window', 'Verdict'].map(h => /*#__PURE__*/React.createElement("th", {
+    key: h,
+    style: {
+      padding: '5px 6px',
+      textAlign: 'left',
+      fontWeight: 600
+    }
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, [{
+    m: 'Latvia',
+    rev: '€1,356k',
+    rat: '70×',
+    gi: '★★★★★',
+    ma: '★★★★',
+    pr: '★★',
+    w: '12–24mo',
+    v: 'EXCEPTIONAL',
+    vc: '#00897B'
+  }, {
+    m: 'Romania',
+    rev: '€435k',
+    rat: '200×',
+    gi: '★★★★',
+    ma: '★★★',
+    pr: '★★',
+    w: '24–36mo',
+    v: 'HIGH',
+    vc: '#00897B'
+  }, {
+    m: 'Poland',
+    rev: '€424k',
+    rat: '187×',
+    gi: '★★★',
+    ma: '★★★',
+    pr: '★★★★',
+    w: '12–18mo',
+    v: 'HIGH (time-sensitive)',
+    vc: '#E68A00'
+  }, {
+    m: 'Slovakia',
+    rev: '~€200k',
+    rat: '150×',
+    gi: '★★★',
+    ma: '★★',
+    pr: '★',
+    w: '36+mo',
+    v: 'MEDIUM (low competition)',
+    vc: '#1565C0'
+  }, {
+    m: 'Czech Rep.',
+    rev: '~€220k',
+    rat: '100×',
+    gi: '★★★',
+    ma: '★★',
+    pr: '★★',
+    w: '24–36mo',
+    v: 'MEDIUM',
+    vc: '#1565C0'
+  }].map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: r.m,
+    style: {
+      background: i % 2 === 0 ? '#fff' : '#F5F7FA'
+    }
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px',
+      fontWeight: 700
+    }
+  }, r.m), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px',
+      color: '#00897B',
+      fontWeight: 700
+    }
+  }, r.rev), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px'
+    }
+  }, r.rat), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px'
+    }
+  }, r.gi), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px'
+    }
+  }, r.ma), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px'
+    }
+  }, r.pr), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px'
+    }
+  }, r.w), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '5px 6px',
+      fontWeight: 700,
+      color: r.vc
+    }
+  }, r.v)))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#E0F2F1',
+      borderLeft: '4px solid #00897B',
+      padding: 12,
+      borderRadius: 4,
+      marginTop: 12,
+      fontSize: 11,
+      lineHeight: 1.6
+    }
+  }, /*#__PURE__*/React.createElement("b", null, "Model validation:"), " Your \u20AC45k/MW/month assumption matches Clean Horizon Jan 2026 data exactly (\u20AC533k/yr = \u20AC44k/mo). The -18%/yr taper and 40% floor (\u20AC216k) sit between Germany (\u20AC237k) and France (\u20AC316k) \u2014 conservative but realistic. 5-year Signet Bank debt fully repaid before anticipated Baltic saturation (2028\u20132030). The seed portfolio works on pure arbitrage; ancillary revenue via proprietary trading entity or Engycell VPP is upside.")), tab === 'clusters' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 16,
+      margin: '0 0 8px'
+    }
+  }, "Four Market Clusters (PCA + K-means)"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: '#8B99A8',
+      margin: '0 0 10px'
+    }
+  }, "PC1 (49%) separates declining mature from emerging. PC2 (22%) captures Baltic sync shock. Latvia-Lithuania r=0.991."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))',
+      gap: 8,
+      marginBottom: 12
+    }
+  }, Object.entries(CLUSTERS).map(([name, {
+    countries,
+    color
+  }]) => {
+    const avg = Math.round(countries.map(c => siStats.find(s => s.country === c)?.mean || 0).reduce((a, b) => a + b, 0) / countries.length);
+    return /*#__PURE__*/React.createElement("div", {
+      key: name,
+      style: {
+        border: `2px solid ${color}`,
+        borderRadius: 6,
+        padding: 10,
+        cursor: 'pointer'
+      },
+      onClick: () => {
+        setSelCountries(countries);
+        setTab('timeseries');
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color,
+        textTransform: 'uppercase'
+      }
+    }, name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 22,
+        fontWeight: 900,
+        color: '#1B2A4A'
+      }
+    }, avg, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: '#8B99A8'
+      }
+    }, " k\u20AC/MW/yr")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: '#3A4A5C'
+      }
+    }, countries.join(', ')));
+  })), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 280
+  }, /*#__PURE__*/React.createElement(LineChart, {
+    data: clusterAvg
+  }, /*#__PURE__*/React.createElement(CartesianGrid, {
+    strokeDasharray: "3 3",
+    stroke: "#E8EDF2"
+  }), /*#__PURE__*/React.createElement(XAxis, {
+    dataKey: "date",
+    tick: {
+      fontSize: 9
+    },
+    interval: 5
+  }), /*#__PURE__*/React.createElement(YAxis, {
+    tick: {
+      fontSize: 9
+    }
+  }), /*#__PURE__*/React.createElement(Tooltip, null), /*#__PURE__*/React.createElement(ReferenceLine, {
+    x: "2025-02",
+    stroke: "#CC0000",
+    strokeDasharray: "4 4",
+    label: {
+      value: "Sync",
+      position: "top",
+      fontSize: 9
+    }
+  }), Object.entries(CLUSTERS).map(([n, {
+    color
+  }]) => /*#__PURE__*/React.createElement(Line, {
+    key: n,
+    type: "monotone",
+    dataKey: n,
+    stroke: color,
+    strokeWidth: 2,
+    dot: false
+  })), /*#__PURE__*/React.createElement(Legend, {
+    wrapperStyle: {
+      fontSize: 10
+    }
+  })))), tab === 'timeseries' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 16,
+      margin: '0 0 6px'
+    }
+  }, "Revenue Time Series (k\u20AC/MW/year)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 3,
+      marginBottom: 8
+    }
+  }, SI_COUNTRIES.map(c => /*#__PURE__*/React.createElement("button", {
+    key: c,
+    onClick: () => toggle(c),
+    style: {
+      padding: '2px 7px',
+      border: `2px solid ${SI_COLORS[c]}`,
+      borderRadius: 3,
+      background: selCountries.includes(c) ? SI_COLORS[c] : '#fff',
+      color: selCountries.includes(c) ? '#fff' : SI_COLORS[c],
+      fontSize: 9,
+      fontWeight: 600,
+      cursor: 'pointer'
+    }
+  }, c))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 4,
+      marginBottom: 8,
+      flexWrap: 'wrap'
+    }
+  }, Object.entries(CLUSTERS).map(([n, {
+    countries,
+    color
+  }]) => /*#__PURE__*/React.createElement("button", {
+    key: n,
+    onClick: () => setSelCountries(countries),
+    style: {
+      padding: '2px 7px',
+      border: `1px solid ${color}`,
+      borderRadius: 3,
+      background: '#fff',
+      color,
+      fontSize: 9,
+      cursor: 'pointer'
+    }
+  }, n)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSelCountries(SI_COUNTRIES),
+    style: {
+      padding: '2px 7px',
+      border: '1px solid #8B99A8',
+      borderRadius: 3,
+      background: '#fff',
+      color: '#8B99A8',
+      fontSize: 9,
+      cursor: 'pointer'
+    }
+  }, "All")), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 340
+  }, /*#__PURE__*/React.createElement(LineChart, {
+    data: SI_DATA
+  }, /*#__PURE__*/React.createElement(CartesianGrid, {
+    strokeDasharray: "3 3",
+    stroke: "#E8EDF2"
+  }), /*#__PURE__*/React.createElement(XAxis, {
+    dataKey: "date",
+    tick: {
+      fontSize: 9
+    },
+    interval: 5
+  }), /*#__PURE__*/React.createElement(YAxis, {
+    tick: {
+      fontSize: 9
+    }
+  }), /*#__PURE__*/React.createElement(Tooltip, null), /*#__PURE__*/React.createElement(ReferenceLine, {
+    x: "2025-02",
+    stroke: "#CC0000",
+    strokeDasharray: "4 4"
+  }), selCountries.map(c => /*#__PURE__*/React.createElement(Line, {
+    key: c,
+    type: "monotone",
+    dataKey: c,
+    stroke: SI_COLORS[c],
+    strokeWidth: 1.5,
+    dot: false
+  })), /*#__PURE__*/React.createElement(Legend, {
+    wrapperStyle: {
+      fontSize: 9
+    }
+  })))), tab === 'sync' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 16,
+      margin: '0 0 6px'
+    }
+  }, "Baltic Synchronisation Impact (Feb 2025)"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: '#8B99A8',
+      margin: '0 0 10px'
+    }
+  }, "Pre-sync vs post-sync average revenue. Baltics: +766%. Rest of Europe: -8%."), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 380
+  }, /*#__PURE__*/React.createElement(BarChart, {
+    data: siStats,
+    layout: "vertical"
+  }, /*#__PURE__*/React.createElement(CartesianGrid, {
+    strokeDasharray: "3 3",
+    stroke: "#E8EDF2"
+  }), /*#__PURE__*/React.createElement(XAxis, {
+    type: "number",
+    tick: {
+      fontSize: 9
+    },
+    domain: [-100, 900]
+  }), /*#__PURE__*/React.createElement(YAxis, {
+    dataKey: "country",
+    type: "category",
+    tick: {
+      fontSize: 10
+    },
+    width: 85
+  }), /*#__PURE__*/React.createElement(Tooltip, {
+    formatter: v => `${v}%`
+  }), /*#__PURE__*/React.createElement(Bar, {
+    dataKey: "syncChange",
+    name: "Post-sync \u0394%"
+  }, siStats.map((s, i) => /*#__PURE__*/React.createElement(Cell, {
+    key: i,
+    fill: s.syncChange > 100 ? '#00897B' : s.syncChange > 0 ? '#1565C0' : s.syncChange > -30 ? '#E68A00' : '#CC0000'
+  }))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 8,
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#E0F2F1',
+      borderLeft: '4px solid #00897B',
+      padding: 10,
+      borderRadius: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: '#00897B',
+      fontSize: 12
+    }
+  }, "Baltics: +766%"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      marginTop: 3
+    }
+  }, "168 \u2192 1,452 k\u20AC/MW/yr. Loss of Russian inertia + BBCM launch + acute supply shortage. Compressing from peak but structurally elevated.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#FFF3E0',
+      borderLeft: '4px solid #E68A00',
+      padding: 10,
+      borderRadius: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: '#E68A00',
+      fontSize: 12
+    }
+  }, "Rest of Europe: -8%"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      marginTop: 3
+    }
+  }, "Declining in mature markets (Belgium -58%). Growing in CEE (Poland +131%, Romania +123%) from solar buildout. Germany flat.")))), tab === 'ratio' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 16,
+      margin: '0 0 6px'
+    }
+  }, "RES-to-BESS Ratio: Opportunity Indicator?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#1B2A4A',
+      borderRadius: 6,
+      padding: 12,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: '#E68A00',
+      fontWeight: 700,
+      fontSize: 12
+    }
+  }, "Verdict: Partially Correct"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: '#E8EDF2',
+      fontSize: 11,
+      marginTop: 3
+    }
+  }, "Moderate positive correlation (r=", r.toFixed(2), ") with actual revenue. Misses grid isolation (Baltics) and market design (Italy). Better as one factor in a 4-factor composite.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      marginBottom: 8,
+      flexWrap: 'wrap',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 600
+    }
+  }, "Sort:"), [['ratio', 'Ratio'], ['storageIdx', 'Revenue'], ['res', 'RES GW']].map(([id, l]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => setResSort(id),
+    style: {
+      padding: '3px 8px',
+      border: 'none',
+      borderRadius: 3,
+      cursor: 'pointer',
+      fontSize: 10,
+      fontWeight: 600,
+      background: resSort === id ? '#1B2A4A' : '#E8EDF2',
+      color: resSort === id ? '#fff' : '#3A4A5C'
+    }
+  }, l)), /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 3,
+      marginLeft: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: showPipeline,
+    onChange: () => setShowPipeline(!showPipeline)
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 600,
+      color: showPipeline ? '#00897B' : '#8B99A8'
+    }
+  }, "Include pipeline"))), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 440
+  }, /*#__PURE__*/React.createElement(BarChart, {
+    data: resData,
+    layout: "vertical",
+    margin: {
+      left: 75
+    }
+  }, /*#__PURE__*/React.createElement(CartesianGrid, {
+    strokeDasharray: "3 3",
+    stroke: "#E8EDF2"
+  }), /*#__PURE__*/React.createElement(XAxis, {
+    type: "number",
+    tick: {
+      fontSize: 9
+    }
+  }), /*#__PURE__*/React.createElement(YAxis, {
+    dataKey: "country",
+    type: "category",
+    tick: {
+      fontSize: 10
+    },
+    width: 75
+  }), /*#__PURE__*/React.createElement(Tooltip, {
+    content: ({
+      active,
+      payload
+    }) => {
+      if (!active || !payload?.length) return null;
+      const d = payload[0].payload;
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: '#fff',
+          border: '1px solid #E8EDF2',
+          padding: 8,
+          borderRadius: 4,
+          fontSize: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontWeight: 700
+        }
+      }, d.country), /*#__PURE__*/React.createElement("div", null, "RES: ", d.res, " GW | BESS: ", d.bess, " GW", showPipeline ? ` (+${d.pipeline} pipeline)` : ''), /*#__PURE__*/React.createElement("div", null, "Ratio: ", d.ratioLabel, " | Revenue: ", d.storageIdx, " k\u20AC/MW/yr"));
+    }
+  }), /*#__PURE__*/React.createElement(Bar, {
+    dataKey: "ratio"
+  }, resData.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
+    key: i,
+    fill: REG_COLORS[d.region] || '#8B99A8'
+  }))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      justifyContent: 'center',
+      marginTop: 6,
+      flexWrap: 'wrap'
+    }
+  }, Object.entries(REG_COLORS).map(([r, c]) => /*#__PURE__*/React.createElement("div", {
+    key: r,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 3,
+      fontSize: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 10,
+      height: 10,
+      borderRadius: 2,
+      background: c
+    }
+  }), r))), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 13,
+      marginTop: 14,
+      marginBottom: 6
+    }
+  }, "Ratio vs Actual Revenue (r = ", r.toFixed(2), ")"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 280
+  }, /*#__PURE__*/React.createElement(ScatterChart, {
+    margin: {
+      left: 10,
+      right: 20,
+      bottom: 15
+    }
+  }, /*#__PURE__*/React.createElement(CartesianGrid, {
+    strokeDasharray: "3 3",
+    stroke: "#E8EDF2"
+  }), /*#__PURE__*/React.createElement(XAxis, {
+    dataKey: "ratio",
+    type: "number",
+    tick: {
+      fontSize: 9
+    },
+    label: {
+      value: 'RES/BESS Ratio →',
+      position: 'bottom',
+      fontSize: 10
+    },
+    domain: [0, showPipeline ? 'auto' : 300]
+  }), /*#__PURE__*/React.createElement(YAxis, {
+    dataKey: "storageIdx",
+    type: "number",
+    tick: {
+      fontSize: 9
+    },
+    label: {
+      value: 'Revenue →',
+      angle: -90,
+      position: 'insideLeft',
+      fontSize: 10
+    }
+  }), /*#__PURE__*/React.createElement(Tooltip, {
+    content: ({
+      active,
+      payload
+    }) => {
+      if (!active || !payload?.length) return null;
+      const d = payload[0].payload;
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: '#fff',
+          border: '1px solid #E8EDF2',
+          padding: 6,
+          borderRadius: 3,
+          fontSize: 10
+        }
+      }, /*#__PURE__*/React.createElement("b", null, d.country), /*#__PURE__*/React.createElement("br", null), "Ratio: ", d.ratioLabel, " | Rev: ", d.storageIdx);
+    }
+  }), /*#__PURE__*/React.createElement(Scatter, {
+    data: corrData
+  }, corrData.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
+    key: i,
+    fill: REG_COLORS[d.region],
+    r: d.syncEvent ? 7 : 4
+  })))))), tab === 'floor' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 16,
+      margin: '0 0 8px'
+    }
+  }, "Can Ancillary Prices Go to Zero? Where Do They Converge?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#1B2A4A',
+      borderRadius: 7,
+      padding: 16,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: '#26C6DA',
+      fontWeight: 700,
+      fontSize: 13,
+      marginBottom: 5
+    }
+  }, "Short Answer: No \u2014 But They Can Compress 60\u201370%"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: '#E8EDF2',
+      fontSize: 12,
+      lineHeight: 1.7,
+      margin: 0
+    }
+  }, "Ancillary service prices have a structural floor above zero because TSOs are ", /*#__PURE__*/React.createElement("strong", null, "legally obligated"), " to procure minimum volumes of FCR, aFRR, and mFRR every day under EU regulations. Even with massive BESS oversupply, someone still gets paid. The floor is set by the ", /*#__PURE__*/React.createElement("strong", null, "opportunity cost"), " of the marginal BESS unit \u2014 what it could earn doing arbitrage instead. Prices compress ", /*#__PURE__*/React.createElement("em", null, "toward"), " arbitrage levels, but never below them.")), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 14,
+      margin: '16px 0 8px',
+      borderBottom: '2px solid #00897B',
+      paddingBottom: 4
+    }
+  }, "The Compression Mechanism"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gap: 8,
+      marginBottom: 14
+    }
+  }, [{
+    step: '1',
+    title: 'BESS capacity exceeds ancillary demand',
+    text: 'The overbuild ratio (available BESS MW ÷ total service demand MW) crosses 1.0. Multiple batteries compete for the same FCR/aFRR/mFRR slots. Auction clearing prices fall.',
+    color: '#E68A00'
+  }, {
+    step: '2',
+    title: 'Ancillary prices converge toward arbitrage opportunity cost',
+    text: 'A battery won\'t offer ancillary capacity for €30/MW/h if it can earn €50/MW/h trading on Nord Pool. The floor for ancillary prices equals what BESS can earn in wholesale markets. At overbuild ratios of 1.5–2.0×, this convergence is largely complete.',
+    color: '#E68A00'
+  }, {
+    step: '3',
+    title: 'Arbitrage itself compresses (the double squeeze)',
+    text: 'More BESS absorbing the same price spreads flattens the duck curve. Midday lows rise (more batteries charging), evening peaks fall (more discharging). Both revenue streams decline together — but neither reaches zero because supply/demand volatility from weather is irreducible.',
+    color: '#CC0000'
+  }, {
+    step: '4',
+    title: 'New products expand the addressable market',
+    text: 'TSOs create new service categories as old ones saturate. Germany launched an inertia market in Jan 2026. Greece opened balancing to BESS. Spain introduced voltage control rules. The total revenue stack grows even as individual product prices compress.',
+    color: '#00897B'
+  }].map(({
+    step,
+    title,
+    text,
+    color
+  }) => /*#__PURE__*/React.createElement("div", {
+    key: step,
+    style: {
+      background: '#fff',
+      border: '1px solid #E8EDF2',
+      borderLeft: `4px solid ${color}`,
+      borderRadius: 5,
+      padding: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      background: color,
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 12,
+      fontWeight: 700,
+      flexShrink: 0
+    }
+  }, step), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: '#1B2A4A',
+      fontSize: 13
+    }
+  }, title)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#3A4A5C',
+      marginTop: 5,
+      paddingLeft: 32,
+      lineHeight: 1.6
+    }
+  }, text)))), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 14,
+      margin: '16px 0 8px',
+      borderBottom: '2px solid #00897B',
+      paddingBottom: 4
+    }
+  }, "Real-World Evidence: The UK Crash"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 10,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      border: '1px solid #E8EDF2',
+      borderRadius: 6,
+      padding: 14,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#8B99A8',
+      fontWeight: 600
+    }
+  }, "UK BESS Revenue 2022"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 32,
+      fontWeight: 900,
+      color: '#00897B',
+      fontFamily: 'monospace'
+    }
+  }, "\xA3150k"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#8B99A8'
+    }
+  }, "per MW/year"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#3A4A5C',
+      marginTop: 6
+    }
+  }, "Scarce supply, high FCR prices")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      border: '1px solid #E8EDF2',
+      borderRadius: 6,
+      padding: 14,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#8B99A8',
+      fontWeight: 600
+    }
+  }, "UK BESS Revenue 2023"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 32,
+      fontWeight: 900,
+      color: '#CC0000',
+      fontFamily: 'monospace'
+    }
+  }, "\xA350k"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#8B99A8'
+    }
+  }, "per MW/year"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#CC0000',
+      marginTop: 6,
+      fontWeight: 600
+    }
+  }, "\u201367% in 12 months"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#FFF3E0',
+      borderLeft: '4px solid #E68A00',
+      padding: 12,
+      borderRadius: 4,
+      fontSize: 11,
+      lineHeight: 1.6,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: '#E68A00'
+    }
+  }, "What happened:"), " UK frequency capacity overbuild ratio exceeded 1.5\xD7. Prices collapsed to near the wholesale arbitrage opportunity cost \u2014 but not to zero. BESS assets pivoted from pure ancillary to revenue-stacking (arbitrage + ancillary + balancing energy). The same pattern is beginning in Germany where ~580 MW of BESS is prequalified for aFRR against ~2 GW TSO procurement. At 35% prequalification of the expected 5.7 GW fleet by end-2026, supply will match demand \u2014 triggering the same compression."), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 14,
+      margin: '16px 0 8px',
+      borderBottom: '2px solid #00897B',
+      paddingBottom: 4
+    }
+  }, "The Overbuild Ratio \u2014 Key Saturation Indicator"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: 11
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    style: {
+      background: '#1B2A4A',
+      color: '#fff'
+    }
+  }, ['Overbuild Ratio', 'Market Phase', 'Price Behaviour', 'Example'].map(h => /*#__PURE__*/React.createElement("th", {
+    key: h,
+    style: {
+      padding: '6px 8px',
+      textAlign: 'left',
+      fontWeight: 600
+    }
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, [{
+    r: '< 0.5×',
+    ph: 'Acute scarcity',
+    pr: 'Extreme premiums. 2–10× vs mature markets.',
+    ex: 'Baltics Feb–May 2025 (€1,500–5,300k)',
+    c: '#00897B'
+  }, {
+    r: '0.5–1.0×',
+    ph: 'Tightening',
+    pr: 'Premiums compressing. First movers still earn well.',
+    ex: 'Baltics H2 2025 (€500–1,400k)',
+    c: '#E68A00'
+  }, {
+    r: '1.0–1.5×',
+    ph: 'Balanced → oversupplied',
+    pr: 'Prices converging toward arbitrage floor.',
+    ex: 'Germany aFRR 2025–2026',
+    c: '#E68A00'
+  }, {
+    r: '1.5–2.0×',
+    ph: 'Saturated',
+    pr: 'At or near opportunity cost. Revenue stacking essential.',
+    ex: 'UK 2023 (£50k/MW/yr)',
+    c: '#CC0000'
+  }, {
+    r: '> 2.0×',
+    ph: 'Oversaturated',
+    pr: 'Some BESS exits market. Weakest assets idle.',
+    ex: 'Not yet observed in Europe',
+    c: '#CC0000'
+  }].map((row, i) => /*#__PURE__*/React.createElement("tr", {
+    key: row.r,
+    style: {
+      background: i % 2 === 0 ? '#fff' : '#F5F7FA'
+    }
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '6px 8px',
+      fontWeight: 700,
+      fontFamily: 'monospace'
+    }
+  }, row.r), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '6px 8px',
+      fontWeight: 600,
+      color: row.c
+    }
+  }, row.ph), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '6px 8px'
+    }
+  }, row.pr), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '6px 8px',
+      fontSize: 10,
+      color: '#8B99A8'
+    }
+  }, row.ex)))))), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 14,
+      margin: '16px 0 8px',
+      borderBottom: '2px solid #00897B',
+      paddingBottom: 4
+    }
+  }, "Baltic Price Convergence Forecast"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+      gap: 8,
+      marginBottom: 14
+    }
+  }, [{
+    period: '2026–2027',
+    label: 'PREMIUM',
+    rev: '€400–600k',
+    clr: '#00897B',
+    note: 'First-mover scarcity. ~830 MW demand vs <500 MW commercial BESS. Your Signet debt repays here.'
+  }, {
+    period: '2028–2029',
+    label: 'COMPRESSION',
+    rev: '€200–350k',
+    clr: '#E68A00',
+    note: '1.5 GW pipeline arriving. Overbuild ratio crosses 1.0×. Ancillary and arbitrage both compress.'
+  }, {
+    period: '2030–2032',
+    label: 'MATURITY',
+    rev: '€150–220k',
+    clr: '#8B99A8',
+    note: 'Converges toward Germany/France steady state (€219–251k). New products (inertia, voltage) partially offset.'
+  }].map(({
+    period,
+    label,
+    rev,
+    clr,
+    note
+  }) => /*#__PURE__*/React.createElement("div", {
+    key: period,
+    style: {
+      background: '#fff',
+      border: `2px solid ${clr}`,
+      borderRadius: 6,
+      padding: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: clr,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: '#1B2A4A',
+      marginTop: 2
+    }
+  }, period), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 900,
+      color: clr,
+      margin: '6px 0',
+      fontFamily: 'monospace'
+    }
+  }, rev), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#3A4A5C',
+      lineHeight: 1.5
+    }
+  }, note)))), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 14,
+      margin: '16px 0 8px',
+      borderBottom: '2px solid #00897B',
+      paddingBottom: 4
+    }
+  }, "Five Reasons Ancillary Prices Cannot Reach Zero"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gap: 8,
+      marginBottom: 14
+    }
+  }, [{
+    n: '1',
+    title: 'Legal procurement obligation',
+    text: 'EU Electricity Balancing Guidelines mandate TSOs procure FCR, aFRR, and mFRR daily. AST, Elering, and Litgrid run BBCM auctions every morning. Even if 10 GW of BESS were available and only 830 MW needed, someone gets paid for 830 MW.',
+    color: '#1565C0'
+  }, {
+    n: '2',
+    title: 'Opportunity cost floor',
+    text: 'A battery earning €50/MW/h on Nord Pool arbitrage will not bid ancillary capacity below €50/MW/h. The floor for ancillary capacity prices equals wholesale arbitrage revenue. Ancillary prices compress toward arbitrage — but cannot go below.',
+    color: '#1565C0'
+  }, {
+    n: '3',
+    title: 'Irreducible weather volatility',
+    text: 'Wind output fluctuates 0–100% within hours. Solar drops to zero at sunset. These physical intermittencies create wholesale price spreads that cannot be arbitraged to zero regardless of BESS capacity — there will always be a duck curve as long as renewables generate.',
+    color: '#00897B'
+  }, {
+    n: '4',
+    title: 'Expanding demand',
+    text: 'Every GW of new wind/solar increases balancing demand. The Baltics plan 100% renewable electricity by 2030. Even as BESS supply grows, the volume of ancillary services the TSOs need to procure grows too — partially offsetting price compression.',
+    color: '#00897B'
+  }, {
+    n: '5',
+    title: 'New revenue products being created',
+    text: 'Germany: inertia market (Jan 2026, fixed-price contracts). Greece: opened BESS to balancing. Spain: new voltage control rules. Grid-forming requirements (ENTSO-E Phase II) create premium revenue for compliant BESS. The total addressable revenue stack expands even as individual product prices compress.',
+    color: '#00897B'
+  }].map(({
+    n,
+    title,
+    text,
+    color
+  }) => /*#__PURE__*/React.createElement("div", {
+    key: n,
+    style: {
+      background: '#fff',
+      border: '1px solid #E8EDF2',
+      borderLeft: `4px solid ${color}`,
+      borderRadius: 5,
+      padding: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      background: color,
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 12,
+      fontWeight: 700,
+      flexShrink: 0
+    }
+  }, n), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: '#1B2A4A',
+      fontSize: 13
+    }
+  }, title)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#3A4A5C',
+      marginTop: 5,
+      paddingLeft: 32,
+      lineHeight: 1.6
+    }
+  }, text)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#E0F2F1',
+      borderLeft: '4px solid #00897B',
+      padding: 14,
+      borderRadius: 5,
+      fontSize: 12,
+      lineHeight: 1.7
+    }
+  }, /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: '#1B2A4A'
+    }
+  }, "Model validation against this analysis:"), " Your revenue assumption of \u20AC45k/MW/month (=\u20AC540k/yr) with -18%/yr taper and 40% floor (=\u20AC216k/yr) maps precisely onto the convergence trajectory above. The 40% floor sits between Germany (\u20AC237k, saturated) and France (\u20AC251k, moderate competition) \u2014 mature European steady state. Your Signet Bank debt (5-year tenor) is fully repaid in the premium/compression phase (2026\u20132029) before prices reach the floor. The real risk isn't zero prices \u2014 it's capital recovery timing, and your structure already handles that correctly.")), tab === 'factors' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      color: '#1B2A4A',
+      fontSize: 16,
+      margin: '0 0 8px'
+    }
+  }, "Six Structural Factors Explaining European BESS Revenue Variance"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gap: 8
+    }
+  }, [{
+    f: '1. Grid isolation / interconnection',
+    impact: 'HIGH',
+    c: '#CC0000',
+    t: 'Islands and semi-islands (Baltics, DK2, Iberia) show 107% avg CV vs 56% for well-connected. Trapped volatility = higher BESS value per MW.'
+  }, {
+    f: '2. Synchronisation events',
+    impact: 'EXTREME',
+    c: '#CC0000',
+    t: 'Baltic desync from Russia: +766%. A one-time structural shift — permanent loss of Russian inertia. The single largest signal in the entire dataset.'
+  }, {
+    f: '3. Renewable duck curve',
+    impact: 'HIGH',
+    c: '#E68A00',
+    t: 'DK2/Sweden: 2–3× summer/winter ratio from wind/solar oversupply. Romania nearly flat (1.08×). Poland/Germany duck curves growing with solar buildout.'
+  }, {
+    f: '4. Ancillary market design',
+    impact: 'MED-HIGH',
+    c: '#E68A00',
+    t: 'Baltic BBCM: 2–10× Finnish prices. Italy: lowest revenue despite high RES because ancillary market was closed to BESS. Market access rules override fundamentals.'
+  }, {
+    f: '5. BESS saturation / overbuild ratio',
+    impact: 'MEDIUM',
+    c: '#1565C0',
+    t: 'UK: £150k→£50k when overbuild ratio hit 1.5×. Belgium: 492→208. Prices converge to arbitrage opportunity cost — never zero, but can compress 60–70%.'
+  }, {
+    f: '6. Seasonality patterns',
+    impact: 'VARIES',
+    c: '#8B99A8',
+    t: 'Baltics: 3× summer premium. Romania: nearly flat year-round. Revenue predictability varies dramatically — affects bankability and debt structuring.'
+  }].map(({
+    f,
+    impact,
+    c,
+    t
+  }) => /*#__PURE__*/React.createElement("div", {
+    key: f,
+    style: {
+      background: '#fff',
+      border: '1px solid #E8EDF2',
+      borderLeft: `4px solid ${c}`,
+      borderRadius: 4,
+      padding: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: '#1B2A4A',
+      fontSize: 12
+    }
+  }, f), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      fontWeight: 700,
+      color: c,
+      background: `${c}15`,
+      padding: '2px 6px',
+      borderRadius: 3
+    }
+  }, impact)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#3A4A5C',
+      marginTop: 4,
+      lineHeight: 1.5
+    }
+  }, t))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      overflowX: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: 10
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    style: {
+      background: '#1B2A4A',
+      color: '#fff'
+    }
+  }, ['Country', 'Mean', 'Latest (Jan 26)', 'Pre-Sync', 'Post-Sync', 'Δ%'].map(h => /*#__PURE__*/React.createElement("th", {
+    key: h,
+    style: {
+      padding: '4px 5px',
+      textAlign: 'left',
+      fontWeight: 600
+    }
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, siStats.map((s, i) => /*#__PURE__*/React.createElement("tr", {
+    key: s.country,
+    style: {
+      background: i % 2 === 0 ? '#fff' : '#F5F7FA'
+    }
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '3px 5px',
+      fontWeight: 600,
+      color: SI_COLORS[s.country]
+    }
+  }, s.country), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '3px 5px'
+    }
+  }, s.mean), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '3px 5px'
+    }
+  }, s.latest), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '3px 5px'
+    }
+  }, s.preMean), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '3px 5px'
+    }
+  }, s.postMean), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: '3px 5px',
+      fontWeight: 700,
+      color: s.syncChange > 100 ? '#00897B' : s.syncChange > 0 ? '#1565C0' : '#CC0000'
+    }
+  }, s.syncChange > 0 ? '+' : '', s.syncChange, "%")))))), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 9,
+      color: '#8B99A8',
+      marginTop: 8
+    }
+  }, "Sources: Clean Horizon Storage Index (uploaded), IRENA Renewable Capacity Statistics 2025, SolarPower Europe EMMES 2025, Wood Mackenzie, Modo Energy, Energy-Storage.News, AST Latvia, Elering, national TSO/regulator reports."));
 }
-
-
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Dashboard));
-</script>
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Dashboard));</script>
 </body>
 </html>
